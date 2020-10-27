@@ -7,7 +7,7 @@ import subprocess
 from pprint import pprint
 import argparse
 
-def run(csvs, tag, doTestRun):
+def run(csvs, tag, direct_submit, doTestRun):
 
     hadoop_user = subprocess.check_output("voms-proxy-info -identity -dont-verify-ac | cut -d '/' -f6 | cut -d '=' -f2", shell=True)
     if not hadoop_user:
@@ -147,9 +147,11 @@ def run(csvs, tag, doTestRun):
                   runCmd = str(
                     "configurePrivateMCCondorJobs.py --batchqueue={BATCHQUEUE} --batchscript={BATCHSCRIPT}" \
                     " --nevents={NEVTS} --seed={SEED} --tarfile={TARFILE} --condorsite={CONDORSITE} --condoroutdir={CONDOROUTDIR}" \
-                    " --outdir={OUTDIR} --outlog={OUTLOG} --errlog={ERRLOG} --required_memory={REQMEM} --job_flavor={JOBFLAVOR} --sites={SITES} --dry"
+                    " --outdir={OUTDIR} --outlog={OUTLOG} --errlog={ERRLOG} --required_memory={REQMEM} --job_flavor={JOBFLAVOR} --sites={SITES}"
                     ).format(**jobargs)
                   print(runCmd)
+                  if not direct_submit:
+                     runCmd = runCmd + " --dry"
                   os.system(runCmd)
 
 
@@ -158,7 +160,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("csvs", help="csv files with samples", nargs="+")
     parser.add_argument("--tag", help="Production tag", type=str, required=True)
+    parser.add_argument("--direct_submit", help="Submit without waiting", action='store_true', required=False, default=False)
     parser.add_argument("--testrun", help="Flag for test run", action='store_true', required=False, default=False)
     args = parser.parse_args()
 
-    run(csvs=args.csvs, tag=args.tag, doTestRun=args.testrun)
+    run(csvs=args.csvs, tag=args.tag, direct_submit=args.direct_submit, doTestRun=args.testrun)
