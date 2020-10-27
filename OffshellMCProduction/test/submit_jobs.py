@@ -124,7 +124,7 @@ def run(csvs, tag, doTestRun):
                   if not os.path.isdir(outdir+"/Logs"):
                      os.makedirs(outdir+"/Logs")
 
-                  seed = seed + nevts_per_job
+                  seed = seed + nevts_per_job/100
 
                   jobargs = {
                      "BATCHQUEUE" : batchqueue,
