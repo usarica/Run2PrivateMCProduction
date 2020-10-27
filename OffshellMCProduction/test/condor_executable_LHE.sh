@@ -124,7 +124,8 @@ done
 
 RUNDIR=$(pwd)
 
-. runcmsgrid.sh ${NEVTS} ${SEED} 1
+chmod 755 runcmsgrid.sh
+./runcmsgrid.sh ${NEVTS} ${SEED} 1
 
 RUN_STATUS=$?
 if [[ ${RUN_STATUS} -ne 0 ]]; then
