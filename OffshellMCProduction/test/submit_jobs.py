@@ -17,7 +17,7 @@ def run(csvs, tag, direct_submit, doTestRun):
     scram_arch = os.getenv("SCRAM_ARCH")
     cmssw_version = os.getenv("CMSSW_VERSION")
 
-    allowed_sites="T2_US_UCSD,T2_US_Caltech,T2_US_MIT,T2_US_Purdue,T2_US_Wisconsin,T3_US_UCR,T3_US_Baylor,T3_US_Colorado,T3_US_NotreDame,T3_US_Rice,T3_US_Rutgers,T3_US_UMD,T3_US_OSU"
+    allowed_sites="T2_US_UCSD,T2_US_Caltech,T2_US_MIT,T2_US_Purdue,T2_US_Wisconsin,T2_US_Nebraska,T3_US_UCR,T3_US_Baylor,T3_US_Colorado,T3_US_NotreDame,T3_US_Cornell,T3_US_Rice,T3_US_Rutgers,T3_US_UCD,T3_US_TAMU,T3_US_TTU,T3_US_FIU,T3_US_FIT,T3_US_UMD,T3_US_OSU,T3_US_OSG,T3_US_UMiss,T3_US_PuertoRico"
 
     seed = 12345
     for fname in csvs:
