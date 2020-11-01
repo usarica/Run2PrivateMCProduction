@@ -133,13 +133,17 @@ for f in $(find $chkdir -name condor.sub); do
   fi
 
   if [[ $dirok -eq 1 ]];then
-    TARFILE="${d}.tar"
+    rootdir=${d%/*}
+    lastdir=${d##*/}
+    pushd ${rootdir} &> /dev/null
+    TARFILE="${lastdir}.tar"
     rm -f $TARFILE
-    tar Jcf ${TARFILE} $d --exclude={*.tar}
+    tar Jcf ${TARFILE} ${lastdir} --exclude={*.tar}
     if [[ $? -eq 0 ]];then
       echo "- Compressed successfully, so removing the directory"
-      rm -rf $d
+      rm -rf ${lastdir}
     fi
+    popd &> /dev/null
   fi
 
 done
