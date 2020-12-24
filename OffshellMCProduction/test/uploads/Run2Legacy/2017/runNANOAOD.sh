@@ -20,7 +20,7 @@ cd ../..
 if [[ ! -e nanoaod_cfg.py ]]; then
   echo "Creating the NANOAOD v7 cfg"
   cmsDriver.py --python_filename nanoaod_cfg.py \
-    --eventcontent NANOEDMAODSIM --datatier NANOAODSIM --filein file:miniaod.root --fileout file:nanoaod.root \
+    --eventcontent NANOAODSIM --datatier NANOAODSIM --filein file:miniaod.root --fileout file:nanoaod.root \
     --customise Configuration/DataProcessing/Utils.addMonitoring \
     --conditions 102X_mc2017_realistic_v8 --step NANO --era Run2_2017,run2_nanoAOD_94XMiniAODv2 \
     --no_exec --mc -n -1 || exit $?
