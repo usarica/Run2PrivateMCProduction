@@ -8,7 +8,7 @@ import subprocess
 from pprint import pprint
 import argparse
 
-def run(csvs, tag, gridpack_dir, direct_submit, condor_site, condor_outdir, doTestRun):
+def run(csvs, tag, gridpack_dir, fragment_dir, direct_submit, condor_site, condor_outdir, doTestRun):
 
     grid_user = subprocess.check_output("voms-proxy-info -identity -dont-verify-ac | cut -d '/' -f6 | cut -d '=' -f2", shell=True)
     if not grid_user:
@@ -37,7 +37,7 @@ def run(csvs, tag, gridpack_dir, direct_submit, condor_site, condor_outdir, doTe
                 nevts_total = int(row["nevts_total"])
                 nevts_per_job = int(row["nevts_per_job"])
                 gridpack = gridpack_dir + '/' + row["gridpack"]
-                pythia_fragment = gridpack_dir + '/' + row["pythia_fragment"]
+                pythia_fragment = fragment_dir + '/' + row["pythia_fragment"]
 
                 if not os.path.exists(gridpack):
                     raise RuntimeError("{} doesn't exist!".format(gridpack))
@@ -135,6 +135,8 @@ def run(csvs, tag, gridpack_dir, direct_submit, condor_site, condor_outdir, doTe
                    raise RuntimeError("Failed to create {}".format(runscripts))
                 # We also need to upload the Pythia fragment, but it needs to be done via symlinking for renaming purposes
                 pythia_fragment_dset = "{}/fragment.py".format(outdir_main)
+                if os.path.exists(pythia_fragment_dset):
+                  os.unlink(pythia_fragment_dset)
                 os.symlink(pythia_fragment, pythia_fragment_dset)
 
                 batchscript = outdir_main + "/executable.sh"
@@ -147,6 +149,8 @@ def run(csvs, tag, gridpack_dir, direct_submit, condor_site, condor_outdir, doTe
                      os.makedirs(outdir+"/Logs")
 
                   seed = seed + 1000
+                  reqdisk = max(int(1), int(float(4.2*1.5*float(nevts_per_job))/1024.))*1024
+                  strreqdisk = "{}M".format(reqdisk)
 
                   jobargs = {
                      "BATCHQUEUE" : batchqueue,
@@ -162,6 +166,7 @@ def run(csvs, tag, gridpack_dir, direct_submit, condor_site, condor_outdir, doTe
                      "OUTLOG" : "Logs/log_job",
                      "ERRLOG" : "Logs/err_job",
                      "REQMEM" : reqmem,
+                     "REQDISK" : strreqdisk,
                      "REQNCPUS" : reqncpus,
                      "JOBFLAVOR" : jobflavor,
                      "SITES" : allowed_sites
@@ -172,7 +177,7 @@ def run(csvs, tag, gridpack_dir, direct_submit, condor_site, condor_outdir, doTe
                     "configurePrivateMCCondorJobs.py --batchqueue={BATCHQUEUE} --batchscript={BATCHSCRIPT}" \
                     " --nevents={NEVTS} --seed={SEED} --upload={GRIDPACK} --upload={PYTHIA_FRAGMENT} --upload={RUNSCRIPTS}" \
                     " --condorsite={CONDORSITE} --condoroutdir={CONDOROUTDIR}" \
-                    " --outdir={OUTDIR} --outlog={OUTLOG} --errlog={ERRLOG} --required_memory={REQMEM} --required_ncpus={REQNCPUS} --job_flavor={JOBFLAVOR} --sites={SITES}"
+                    " --outdir={OUTDIR} --outlog={OUTLOG} --errlog={ERRLOG} --required_memory={REQMEM} --required_ncpus={REQNCPUS} --required_disk={REQDISK} --job_flavor={JOBFLAVOR} --sites={SITES}"
                     ).format(**jobargs)
                   print(runCmd)
                   if not direct_submit:
@@ -185,7 +190,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("csvs", help="csv files with samples", nargs="+")
     parser.add_argument("--tag", help="Production tag", type=str, required=True)
-    parser.add_argument("--gridpack_dir", help="Full path of gridpacks and Pythia fragments (pretty please put them under the same directory)", type=str, required=True)
+    parser.add_argument("--gridpack_dir", help="Full path of gridpacks", type=str, required=True)
+    parser.add_argument("--fragment_dir", help="Full path of Pythia fragments. Defaulted to --gridpack_dir.", type=str, required=False, default="")
     parser.add_argument("--condor_site", help="Condor site. You can specify the exact protocol and ports, or give something generic as 't2.ucsd.edu'. Check condor_executable.sh syntax.", type=str, required=True)
     parser.add_argument("--condor_outdir", help="Full path of the target main directory", type=str, required=True)
     parser.add_argument("--direct_submit", help="Submit without waiting", action='store_true', required=False, default=False)
@@ -194,7 +200,11 @@ if __name__ == "__main__":
 
     if not args.gridpack_dir.startswith('/'):
        raise RuntimeError("{} needs to be an absolute path.".format(args.gridpack_dir))
+    if not args.fragment_dir:
+       args.fragment_dir = args.gridpack_dir
+    if not args.fragment_dir.startswith('/'):
+       raise RuntimeError("{} needs to be an absolute path.".format(args.fragment_dir))
     if not args.condor_outdir.startswith('/'):
        raise RuntimeError("{} needs to be an absolute path.".format(args.condor_outdir))
 
-    run(csvs=args.csvs, tag=args.tag, gridpack_dir=args.gridpack_dir, direct_submit=args.direct_submit, condor_site=args.condor_site, condor_outdir=args.condor_outdir, doTestRun=args.testrun)
+    run(csvs=args.csvs, tag=args.tag, gridpack_dir=args.gridpack_dir, fragment_dir=args.fragment_dir, direct_submit=args.direct_submit, condor_site=args.condor_site, condor_outdir=args.condor_outdir, doTestRun=args.testrun)

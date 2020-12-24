@@ -4,6 +4,7 @@ import sys
 import imp
 import copy
 import os
+import socket
 import filecmp
 import shutil
 import pickle
@@ -33,6 +34,7 @@ class BatchManager:
       self.parser.add_option("--errlog", type="string", help="Name of the output error file")
 
       self.parser.add_option("--required_memory", type="string", default="2048M", help="Required RAM for the job")
+      self.parser.add_option("--required_disk", type="string", default="5G", help="Required disk for the job")
       self.parser.add_option("--required_ncpus", type="int", default=2, help="Required number of CPUs for the job")
       self.parser.add_option("--job_flavor", type="string", default="tomorrow", help="Time limit for job (tomorrow = 1 day, workday = 8 hours, see https://batchdocs.web.cern.ch/local/submit.html#job-flavours for more)")
       self.parser.add_option("--sites", type="string", help="Name of the HTCondor run sites")
@@ -70,7 +72,7 @@ class BatchManager:
       for fname in self.opt.upload:
          if not os.path.isfile(fname):
             sys.exit("Uploaded file {} does not exist. Exiting...".format(fname))
-      self.uploads = " ".join(self.opt.upload)
+      self.uploads = ",".join(self.opt.upload)
       if not self.uploads:
          sys.exit("You must specify extra uploads.")
 
@@ -85,15 +87,22 @@ class BatchManager:
       currentCMSSWBASESRC = os.getenv("CMSSW_BASE")+"/src/" # Need the trailing '/'
       currendir_noCMSSWsrc = currentdir.replace(currentCMSSWBASESRC,'')
 
+      scramver = os.getenv("SCRAM_ARCH")
+      singularityver = "cms:rhel6-m202006"
+      if "slc7" in scramver:
+         singularityver = "cms:rhel7-m202006"
+
       gridproxy = None
       if os.getenv("X509_USER_PROXY") is None or not os.getenv("X509_USER_PROXY"):
          gridproxycheckfiles = [
+            "{}/x509up_u{uid}".format(currentdir, uid=os.getuid()),
             "{home}/x509up_u{uid}".format(home=os.path.expanduser("~"), uid=os.getuid()),
             "/tmp/x509up_u{uid}".format(uid=os.getuid())
             ]
          for gridproxycheckfile in gridproxycheckfiles:
             if os.path.exists(gridproxycheckfile):
                gridproxy = gridproxycheckfile
+               break
       else:
          gridproxy = os.getenv("X509_USER_PROXY")
       if gridproxy is None or not os.path.exists(gridproxy):
@@ -125,6 +134,7 @@ class BatchManager:
          "SEED" : self.opt.seed,
          "NCPUS" : self.opt.required_ncpus,
          "REQMEM" : self.opt.required_memory,
+         "REQDISK" : self.opt.required_disk,
          "JOBFLAVOR" : self.opt.job_flavor,
          "REQUIREMENTS" : strrequirements
       }
@@ -140,6 +150,7 @@ error                   = {errLog}.$(ClusterId).$(ProcId).err
 log                     = $(ClusterId).$(ProcId).log
 request_memory          = {REQMEM}
 request_cpus            = {NCPUS}
+request_disk            = {REQDISK}
 +JobFlavour             = "{JOBFLAVOR}"
 x509userproxy           = {GRIDPROXY}
 #https://www-auth.cs.wisc.edu/lists/htcondor-users/2010-September/msg00009.shtml

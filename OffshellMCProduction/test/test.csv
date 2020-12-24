@@ -1,2 +1,2 @@
 channel,year,short_process,mass,nevts_total,nevts_per_job,gridpack,pythia_fragment
-ZZ2L2Nu,2016,GGH,1000,1,1,/home/users/usarica/work/GenStudies/Offshell2020_Gridpacks/gridpacks/201025/ZZ2L2Nu/2016/GGH/1000/gridpack.tar.gz,/home/users/usarica/work/GenStudies/Offshell2020_Gridpacks/fragments/2016/GGH/fragment.py
+ZZ2L2Nu,2016,GGH,200,10,10,gridpacks/201222/ZZ2L2Nu_noExtraPDFs/2016/GGH/200/gridpack.tar.gz,fragments/2016/GGH/fragment.py

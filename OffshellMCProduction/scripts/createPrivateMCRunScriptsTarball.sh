@@ -15,7 +15,7 @@ cp $CMSSW_BASE/src/Run2PrivateMCProduction/OffshellMCProduction/test/uploads/${c
 
 tar Jcvf ${TARFILE} *
 
-mv $TARFILE ${dest}/
+mv $TARFILE ${dest}
 
 cd ${HERE}
 
