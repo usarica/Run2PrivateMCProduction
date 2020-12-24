@@ -17,11 +17,11 @@ def run(csvs, tag, gridpack_dir, direct_submit, condor_site, condor_outdir, doTe
 
     scram_arch = os.getenv("SCRAM_ARCH")
     cmssw_version = os.getenv("CMSSW_VERSION")
-    allowed_sites=None
+    allowed_sites = None
     if "t2.ucsd.edu" in socket.gethostname():
-      allowed_sites="T2_US_UCSD,T2_US_Caltech,T2_US_MIT,T2_US_Purdue,T2_US_Wisconsin,T2_US_Nebraska,T3_US_UCR,T3_US_Baylor,T3_US_Colorado,T3_US_NotreDame,T3_US_Cornell,T3_US_Rice,T3_US_Rutgers,T3_US_UCD,T3_US_TAMU,T3_US_TTU,T3_US_FIU,T3_US_FIT,T3_US_UMD,T3_US_OSU,T3_US_OSG,T3_US_UMiss,T3_US_PuertoRico"
+      allowed_sites = "T2_US_UCSD,T2_US_Caltech,T2_US_MIT,T2_US_Purdue,T2_US_Wisconsin,T2_US_Nebraska,T3_US_UCR,T3_US_Baylor,T3_US_Colorado,T3_US_NotreDame,T3_US_Cornell,T3_US_Rice,T3_US_Rutgers,T3_US_UCD,T3_US_TAMU,T3_US_TTU,T3_US_FIU,T3_US_FIT,T3_US_UMD,T3_US_OSU,T3_US_OSG,T3_US_UMiss,T3_US_PuertoRico"
     else:
-      allowed_sites="T2_CH_CERN,T2_BE_IIHE,T2_CN_Beijing,T2_RU_IHEP,T2_BE_UCL,T2_AT_Vienna,T2_BR_SPRACE,T2_BR_UERJ,T2_CH_CSCS,T2_DE_DESY,T2_DE_RWTH,T2_EE_Estonia,T2_ES_CIEMAT,T2_ES_IFCA,T2_FI_HIP,T2_FR_CCIN2P3,T2_FR_GRIF_IRFU,T2_FR_GRIF_LLR,T2_FR_IPHC,T2_GR_Ioannina,T2_HU_Budapest,T2_IN_TIFR,T2_IT_Bari,T2_IT_Legnaro,T2_IT_Pisa,T2_IT_Rome,T2_KR_KNU,T2_PK_NCP,T2_PL_Swierk,T2_PL_Warsaw,T2_PT_NCG_Lisbon,T2_RU_INR,T2_RU_ITEP,T2_RU_JINR,T2_RU_PNPI,T2_RU_RRC_KI,T2_RU_SINP,T2_TH_CUNSTDA,T2_TR_METU,T2_UA_KIPT,T2_UK_London_Brunel,T2_UK_London_IC,T2_UK_SGrid_Bristol,T2_UK_SGrid_RALPP,T3_CO_Uniandes,T3_FR_IPNL,T3_GR_IASA,T3_HU_Debrecen,T3_IT_Bologna,T3_IT_Napoli,T3_IT_Perugia,T3_IT_Trieste,T3_KR_KNU,T3_MX_Cinvestav,T3_RU_FIAN,T3_TW_NCU,T3_TW_NTU_HEP,T3_UK_London_QMUL,T3_UK_SGrid_Oxford,T3_CN_PKU"
+      allowed_sites = "T2_CH_CERN,T2_BE_IIHE,T2_CN_Beijing,T2_RU_IHEP,T2_BE_UCL,T2_AT_Vienna,T2_BR_SPRACE,T2_BR_UERJ,T2_CH_CSCS,T2_DE_DESY,T2_DE_RWTH,T2_EE_Estonia,T2_ES_CIEMAT,T2_ES_IFCA,T2_FI_HIP,T2_FR_CCIN2P3,T2_FR_GRIF_IRFU,T2_FR_GRIF_LLR,T2_FR_IPHC,T2_GR_Ioannina,T2_HU_Budapest,T2_IN_TIFR,T2_IT_Bari,T2_IT_Legnaro,T2_IT_Pisa,T2_IT_Rome,T2_KR_KNU,T2_PK_NCP,T2_PL_Swierk,T2_PL_Warsaw,T2_PT_NCG_Lisbon,T2_RU_INR,T2_RU_ITEP,T2_RU_JINR,T2_RU_PNPI,T2_RU_RRC_KI,T2_RU_SINP,T2_TH_CUNSTDA,T2_TR_METU,T2_UA_KIPT,T2_UK_London_Brunel,T2_UK_London_IC,T2_UK_SGrid_Bristol,T2_UK_SGrid_RALPP,T3_CO_Uniandes,T3_FR_IPNL,T3_GR_IASA,T3_HU_Debrecen,T3_IT_Bologna,T3_IT_Napoli,T3_IT_Perugia,T3_IT_Trieste,T3_KR_KNU,T3_MX_Cinvestav,T3_RU_FIAN,T3_TW_NCU,T3_TW_NTU_HEP,T3_UK_London_QMUL,T3_UK_SGrid_Oxford,T3_CN_PKU"
 
     seed = 12345000
     for fname in csvs:
@@ -128,14 +128,14 @@ def run(csvs, tag, gridpack_dir, direct_submit, condor_site, condor_outdir, doTe
                 if not os.path.isdir(outdir_main):
                    os.makedirs(outdir_main)
 
-                extra_uploads = outdir_core + "/runscripts_{}.tar".format(year)
-                if not os.path.exists(extra_uploads):
-                   os.system("createPrivateMCRunScriptsTarball.sh Run2Legacy {} {}".format(year, extra_uploads))
-                if not os.path.exists(extra_uploads):
-                   raise RuntimeError("Failed to create {}".format(extra_uploads))
-                else:
-                   # Important to provide a symlink in lieu of a copy/rename to save space.
-                   os.symlink(extra_uploads, "{}/runscripts.tar".format(outdir_main))
+                runscripts = outdir_core + "/runscripts_{}.tar".format(year)
+                if not os.path.exists(runscripts):
+                   os.system("createPrivateMCRunScriptsTarball.sh Run2Legacy {} {}".format(year, runscripts))
+                if not os.path.exists(runscripts):
+                   raise RuntimeError("Failed to create {}".format(runscripts))
+                # We also need to upload the Pythia fragment, but it needs to be done via symlinking for renaming purposes
+                pythia_fragment_dset = "{}/fragment.py".format(outdir_main)
+                os.symlink(pythia_fragment, pythia_fragment_dset)
 
                 batchscript = outdir_main + "/executable.sh"
                 os.system("cp condor_executable.sh {}".format(batchscript))
@@ -154,8 +154,8 @@ def run(csvs, tag, gridpack_dir, direct_submit, condor_site, condor_outdir, doTe
                      "NEVTS" : nevts_per_job,
                      "SEED" : seed,
                      "GRIDPACK" : gridpack,
-                     "PYTHIA_FRAGMENT" : pythia_fragment,
-                     "EXTRA_UPLOADS" : "{}/runscripts.tar".format(outdir_main),
+                     "PYTHIA_FRAGMENT" : pythia_fragment_dset,
+                     "RUNSCRIPTS" : runscripts,
                      "CONDORSITE" : condor_site,
                      "CONDOROUTDIR" : condoroutdir,
                      "OUTDIR" : outdir,
@@ -170,7 +170,7 @@ def run(csvs, tag, gridpack_dir, direct_submit, condor_site, condor_outdir, doTe
 
                   runCmd = str(
                     "configurePrivateMCCondorJobs.py --batchqueue={BATCHQUEUE} --batchscript={BATCHSCRIPT}" \
-                    " --nevents={NEVTS} --seed={SEED} --gridpack={GRIDPACK} --pythia_fragment={PYTHIA_FRAGMENT} --extra_uploads={EXTRA_UPLOADS}" \
+                    " --nevents={NEVTS} --seed={SEED} --upload={GRIDPACK} --upload={PYTHIA_FRAGMENT} --upload={RUNSCRIPTS}" \
                     " --condorsite={CONDORSITE} --condoroutdir={CONDOROUTDIR}" \
                     " --outdir={OUTDIR} --outlog={OUTLOG} --errlog={ERRLOG} --required_memory={REQMEM} --required_ncpus={REQNCPUS} --job_flavor={JOBFLAVOR} --sites={SITES}"
                     ).format(**jobargs)
