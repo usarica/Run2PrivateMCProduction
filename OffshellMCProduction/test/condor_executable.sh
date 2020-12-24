@@ -1,13 +1,12 @@
 #!/bin/bash
 
 
-CMSSWVERSION=$1
-SCRAMARCH=$2
-SUBMITDIR=$3
-declare -i NEVTS=$4
-declare -i SEED=$5
-CONDORSITE=$6
-CONDOROUTDIR=$7
+SUBMITDIR=$1
+declare -i NEVTS=$2
+declare -i SEED=$3
+declare -i NCPUS=$4
+CONDORSITE=$5
+CONDOROUTDIR=$6
 
 
 function setupenv {
@@ -68,8 +67,12 @@ if [[ ! -z ${FILENAME} ]];then
 
   echo "Time before copy: $(date +%s)"
 
+  # FIRST TRY GSIFTP
   COPY_SRC="file://${INPUTDIR}/${FILENAME}"
   COPY_DEST="gsiftp://gftp.${OUTPUTSITE}${OUTPUTDIR}/${RENAMEFILE}"
+  if [[ "${OUTPUTSITE}" == *"eoscms.cern.ch"* ]]; then
+    COPY_DEST="gsiftp://eoscmsftp.cern.ch${OUTPUTDIR/'/eos/cms'/''}/${RENAMEFILE}"
+  fi  
   echo "Running: env -i X509_USER_PROXY=${X509_USER_PROXY} gfal-copy -p -f -t 14400 --verbose --checksum ADLER32 ${COPY_SRC} ${COPY_DEST}"
   declare -i itry=0
   declare -i COPY_STATUS=-1
@@ -82,12 +85,36 @@ if [[ ! -z ${FILENAME} ]];then
     fi
     (( itry += 1 ))
   done
+  # IF GSIFTP FAILS, FALLBACK TO SITE-SPECIFIC PROTOCOLS
+  # (AH, MONKEYS!)
   if [[ $COPY_STATUS -ne 0 ]]; then
+    # Found these from https://fts3.cern.ch:8449/fts3/ftsmon and https://gitlab.cern.ch/SITECONF together, please check.
     if [[ "${OUTPUTSITE}" == *"t2.ucsd.edu"* ]]; then
       COPY_DEST="davs://redirector.t2.ucsd.edu:1094${OUTPUTDIR}/${RENAMEFILE}"
       COPY_DEST=${COPY_DEST/'/hadoop/cms'/''}
+    elif [[ "${OUTPUTSITE}" == *"eoscms.cern.ch"* ]]; then
+      COPY_DEST="root://eoscms.cern.ch${OUTPUTDIR}/${RENAMEFILE}"
+      COPY_DEST=${COPY_DEST/'/eos/cms'/''}
+    elif [[ "${OUTPUTSITE}" == *"iihe.ac.be"* ]]; then
+      # PLEASE CHANGE THE TWO LINES BELOW FOR IIHE
+      # THE FIRST ADJUSTS PROTOCOL, AND PORT IF NEEDED
+      # THE SECOND ADJUSTS DESTINATION FILE NAME
+      COPY_DEST="srm://maite.iihe.ac.be${OUTPUTDIR}/${RENAMEFILE}"
+      COPY_DEST=${COPY_DEST/'/pnfs/iihe/cms/ph/sc4'/''}
+    elif [[ "${OUTPUTSITE}" == *"ihep.ac.cn"* ]]; then
+      # PLEASE CHANGE THE TWO LINE BELOW FOR IHEP CN
+      # THE FIRST ADJUSTS PROTOCOL, AND PORT IF NEEDED
+      # THE SECOND ADJUSTS DESTINATION FILE NAME
+      COPY_DEST="srm://srm.ihep.ac.cn${OUTPUTDIR}/${RENAMEFILE}"
+      COPY_DEST=${COPY_DEST/'/data/cms'/''}
+    elif [[ "${OUTPUTSITE}" == *"m45.ihep.su"* ]]; then
+      # PLEASE CHANGE THE TWO LINE BELOW FOR IHEP CN
+      # THE FIRST ADJUSTS PROTOCOL, AND PORT IF NEEDED
+      # THE SECOND ADJUSTS DESTINATION FILE NAME
+      COPY_DEST="srm://dp0015.m45.ihep.su${OUTPUTDIR}/${RENAMEFILE}"
+      COPY_DEST=${COPY_DEST/'/pnfs/m45.ihep.su/data/cms'/''}
     fi
-    echo "Running xrootd endpoint: env -i X509_USER_PROXY=${X509_USER_PROXY} gfal-copy -p -f -t 14400 --verbose --checksum ADLER32 ${COPY_SRC} ${COPY_DEST}"
+    echo "Running alternative endpoint: env -i X509_USER_PROXY=${X509_USER_PROXY} gfal-copy -p -f -t 14400 --verbose --checksum ADLER32 ${COPY_SRC} ${COPY_DEST}"
     while [[ $itry -lt 10 ]]; do
       env -i X509_USER_PROXY=${X509_USER_PROXY} gfal-copy -p -f -t 14400 --verbose --checksum ADLER32 ${COPY_SRC} ${COPY_DEST}
       COPY_STATUS=$?
@@ -121,9 +148,6 @@ fi
 
 
 
-echo "CMSSWVERSION: $CMSSWVERSION"
-echo "SCRAMARCH: $SCRAMARCH"
-
 echo "GLIDEIN_CMSSite: $GLIDEIN_CMSSite"
 echo "hostname: $(hostname)"
 echo "uname -a: $(uname -a)"
@@ -143,11 +167,14 @@ RUNDIR=$(pwd)
 touch EXTERNAL_TRANSFER_LIST.LST
 
 chmod 755 runcmsgrid.sh
-LHE_STATUS=1
-LHE_SEED=${SEED}
-LHE_ITER=0
+declare -i LHE_STATUS=1
+declare -i LHE_SEED=${SEED}
+declare -i LHE_ITER=0
 while [[ ${LHE_STATUS} -ne 0 ]]; do
-  ./runcmsgrid.sh ${NEVTS} ${LHE_SEED} 1
+  echo "Grid pack iteration ${LHE_ITER} with seed ${LHE_SEED}"
+  echo "time: $(date +%s)"
+
+  ./runcmsgrid.sh ${NEVTS} ${LHE_SEED} ${NCPUS}
   LHE_STATUS=$?
 
   if [[ ${LHE_STATUS} -eq 0 ]]; then
@@ -164,6 +191,9 @@ while [[ ${LHE_STATUS} -ne 0 ]]; do
     fi
   fi
 
+  echo "- Iteration is done."
+  echo "time: $(date +%s)"
+
   LHE_SEED=$(( LHE_SEED + 1 ))
   LHE_ITER=$(( LHE_ITER + 1 ))
   if [[ ${LHE_ITER} -eq 1000 ]]; then
@@ -175,18 +205,72 @@ if [[ ${LHE_STATUS} -ne 0 ]]; then
   echo "LHE generation failed with exit status ${LHE_STATUS}."
   exit 1
 else
-  echo "LHE generation is successful."
+  echo "LHE GRIDPACK SUCCESSFUL"
 fi
 
-mv cmsgrid_final.lhe cmsgrid_final_${SEED}.lhe
-mv cmsgrid_tmp.lhe cmsgrid_final_undecayed_${SEED}.lhe
-tar Jcvf output_LHE_${SEED}.tar cmsgrid_final_${SEED}.lhe cmsgrid_final_undecayed_${SEED}.lhe
+
+declare -i RUN_STATUS=1
+echo "time: $(date +%s)"
+./runLHEGENSIM.sh ${NCPUS}
+RUN_STATUS=$?
+if [[ ${RUN_STATUS} -ne 0 ]]; then
+  exit 1
+fi
+
+RUN_STATUS=1
+echo "time: $(date +%s)"
+./runPREMIXAOD.sh ${NCPUS}
+RUN_STATUS=$?
+if [[ ${RUN_STATUS} -ne 0 ]]; then
+  exit 1
+fi
+
+# MINIAODSIM AND NANOAODSIM steps must use ncpus=1
+# This is to avoid technicalitiies in TFormula evaluations.
+# (AH, ROOT MONKEYS!)
+RUN_STATUS=1
+echo "time: $(date +%s)"
+./runMINIAOD.sh
+RUN_STATUS=$?
+if [[ ${RUN_STATUS} -ne 0 ]]; then
+  exit 1
+fi
+
+RUN_STATUS=1
+./runNANOAOD.sh
+echo "time: $(date +%s)"
+RUN_STATUS=$?
+if [[ ${RUN_STATUS} -ne 0 ]]; then
+  exit 1
+fi
+
+
+echo "All steps are done. Preparing for transfer..."
+echo "time: $(date +%s)"
+
+
+# Rename and tar LHE files and move to LHE folder
 # Making an LHE directory not only puts the tarball inside but also helps create the LHE output subdirectory
 mkdir LHE
-mv output_LHE_${SEED}.tar LHE/
-echo LHE/output_LHE_${SEED}.tar >> EXTERNAL_TRANSFER_LIST.LST
+mv cmsgrid_final.lhe cmsgrid_final_${SEED}.lhe
+mv cmsgrid_tmp.lhe cmsgrid_final_undecayed_${SEED}.lhe
+tar Jcvf output_${SEED}.tar cmsgrid_final_${SEED}.lhe cmsgrid_final_undecayed_${SEED}.lhe
+mv output_${SEED}.tar LHE/
+echo LHE/output_${SEED}.tar >> EXTERNAL_TRANSFER_LIST.LST
+
+# Make the MINIAODSIM directory and move the file there
+mkdir MINIAODSIM
+mv miniaod.root MINIAODSIM/output_${SEED}.root
+echo MINIAODSIM/output_${SEED}.tar >> EXTERNAL_TRANSFER_LIST.LST
+
+# Make the NANOAODSIM directory and move the file there
+mkdir NANOAODSIM
+mv nanoaod.root NANOAODSIM/output_${SEED}.root
+echo NANOAODSIM/output_${SEED}.tar >> EXTERNAL_TRANSFER_LIST.LST
 
 
+echo "Files being transfered:"
+cat EXTERNAL_TRANSFER_LIST.LST
 
 
 echo -e "\n--- Begin EXTERNAL TRANSFER ---\n"
