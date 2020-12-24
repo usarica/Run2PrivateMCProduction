@@ -10,7 +10,7 @@ import argparse
 
 def run(csvs, tag, gridpack_dir, fragment_dir, direct_submit, condor_site, condor_outdir, doTestRun):
 
-    grid_user = subprocess.check_output("voms-proxy-info -identity -dont-verify-ac | cut -d '/' -f6 | cut -d '=' -f2", shell=True)
+    grid_user = subprocess.check_output("voms-proxy-info -identity | cut -d '/' -f6 | cut -d '=' -f2", shell=True)
     if not grid_user:
        grid_user = os.environ.get("USER")
     grid_user = grid_user.strip()
