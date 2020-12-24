@@ -96,23 +96,21 @@ if [[ ! -z ${FILENAME} ]];then
       COPY_DEST="root://eoscms.cern.ch${OUTPUTDIR}/${RENAMEFILE}"
       COPY_DEST=${COPY_DEST/'/eos/cms'/''}
     elif [[ "${OUTPUTSITE}" == *"iihe.ac.be"* ]]; then
-      # PLEASE CHANGE THE TWO LINES BELOW FOR IIHE
-      # THE FIRST ADJUSTS PROTOCOL, AND PORT IF NEEDED
-      # THE SECOND ADJUSTS DESTINATION FILE NAME
-      COPY_DEST="srm://maite.iihe.ac.be${OUTPUTDIR}/${RENAMEFILE}"
-      COPY_DEST=${COPY_DEST/'/pnfs/iihe/cms/ph/sc4'/''}
+      # See https://t2bwiki.iihe.ac.be/GridStorageAccess
+      COPY_DEST="srm://maite.iihe.ac.be:8443${OUTPUTDIR}/${RENAMEFILE}"
+      #COPY_DEST=${COPY_DEST/'/pnfs/iihe/cms'/''}
     elif [[ "${OUTPUTSITE}" == *"ihep.ac.cn"* ]]; then
       # PLEASE CHANGE THE TWO LINE BELOW FOR IHEP CN
       # THE FIRST ADJUSTS PROTOCOL, AND PORT IF NEEDED
-      # THE SECOND ADJUSTS DESTINATION FILE NAME
+      # THE SECOND ADJUSTS DESTINATION FILE NAME BUT IS COMMENTED OUT UNTIL YOU CHECK
       COPY_DEST="srm://srm.ihep.ac.cn${OUTPUTDIR}/${RENAMEFILE}"
-      COPY_DEST=${COPY_DEST/'/data/cms'/''}
+      #COPY_DEST=${COPY_DEST/'/data/cms'/''}
     elif [[ "${OUTPUTSITE}" == *"m45.ihep.su"* ]]; then
-      # PLEASE CHANGE THE TWO LINE BELOW FOR IHEP CN
+      # PLEASE CHANGE THE TWO LINE BELOW FOR IHEP RU
       # THE FIRST ADJUSTS PROTOCOL, AND PORT IF NEEDED
-      # THE SECOND ADJUSTS DESTINATION FILE NAME
+      # THE SECOND ADJUSTS DESTINATION FILE NAME BUT IS COMMENTED OUT UNTIL YOU CHECK
       COPY_DEST="srm://dp0015.m45.ihep.su${OUTPUTDIR}/${RENAMEFILE}"
-      COPY_DEST=${COPY_DEST/'/pnfs/m45.ihep.su/data/cms'/''}
+      #COPY_DEST=${COPY_DEST/'/pnfs/m45.ihep.su/data/cms'/''}
     fi
     echo "Running alternative endpoint: env -i X509_USER_PROXY=${X509_USER_PROXY} gfal-copy -p -f -t 14400 --verbose --checksum ADLER32 ${COPY_SRC} ${COPY_DEST}"
     while [[ $itry -lt 10 ]]; do
