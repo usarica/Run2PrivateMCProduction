@@ -174,7 +174,7 @@ def run(csvs, tag, gridpack_dir, fragment_dir, direct_submit, condor_site, condo
 
 
                   runCmd = str(
-                    "configurePrivateMCCondorJobs.py --batchqueue={BATCHQUEUE} --batchscript={BATCHSCRIPT}" \
+                    "configurePrivateMCCondorJobs.py --batchqueue={BATCHQUEUE} --batchscript={BATCHSCRIPT} --forceSL6" \
                     " --nevents={NEVTS} --seed={SEED} --upload={GRIDPACK} --upload={PYTHIA_FRAGMENT} --upload={RUNSCRIPTS}" \
                     " --condorsite={CONDORSITE} --condoroutdir={CONDOROUTDIR}" \
                     " --outdir={OUTDIR} --outlog={OUTLOG} --errlog={ERRLOG} --required_memory={REQMEM} --required_ncpus={REQNCPUS} --required_disk={REQDISK} --job_flavor={JOBFLAVOR} --sites={SITES}"

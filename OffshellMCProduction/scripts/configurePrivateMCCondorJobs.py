@@ -39,6 +39,8 @@ class BatchManager:
       self.parser.add_option("--job_flavor", type="string", default="tomorrow", help="Time limit for job (tomorrow = 1 day, workday = 8 hours, see https://batchdocs.web.cern.ch/local/submit.html#job-flavours for more)")
       self.parser.add_option("--sites", type="string", help="Name of the HTCondor run sites")
 
+      self.parser.add_option("--forceSL6", action="store_true", default=False, help="Force running on SL6 architecture")
+
       self.parser.add_option("--dry", dest="dryRun", action="store_true", default=False, help="Do not submit jobs, just set up the files")
 
       (self.opt,self.args) = self.parser.parse_args()
@@ -89,7 +91,7 @@ class BatchManager:
 
       scramver = os.getenv("SCRAM_ARCH")
       singularityver = "cms:rhel6-m202006"
-      if "slc7" in scramver:
+      if "slc7" in scramver and not self.opt.forceSL6:
          singularityver = "cms:rhel7-m202006"
 
       gridproxy = None
@@ -126,8 +128,6 @@ class BatchManager:
          "errLog" : self.opt.errlog,
          "QUEUE" : self.opt.batchqueue,
          "SINGULARITYVERSION" : singularityver,
-         "CMSSWVERSION" : os.getenv("CMSSW_VERSION"),
-         "SCRAMARCH" : scramver,
          "SUBMITDIR" : currendir_noCMSSWsrc,
          "UPLOADS" : self.uploads,
          "NEVTS" : self.opt.nevents,
