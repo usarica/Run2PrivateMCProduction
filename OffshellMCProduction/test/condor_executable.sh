@@ -69,10 +69,18 @@ if [[ ! -z ${FILENAME} ]];then
 
   # FIRST TRY GSIFTP
   COPY_SRC="file://${INPUTDIR}/${FILENAME}"
-  COPY_DEST="gsiftp://gftp.${OUTPUTSITE}${OUTPUTDIR}/${RENAMEFILE}"
-  if [[ "${OUTPUTSITE}" == *"eoscms.cern.ch"* ]]; then
-    COPY_DEST="gsiftp://eoscmsftp.cern.ch${OUTPUTDIR/'/eos/cms'/''}/${RENAMEFILE}"
-  fi  
+  # IF THE PROTOCOL IS NOT SPECIFIED, DO SOME GUESSWORK
+  if [[ "${OUTPUTSITE}" != *"://"* ]]; then
+    COPY_DEST="gsiftp://gftp.${OUTPUTSITE}${OUTPUTDIR}/${RENAMEFILE}"
+    if [[ "${OUTPUTSITE}" == *"eoscms.cern.ch"* ]]; then
+      COPY_DEST="gsiftp://eoscmsftp.cern.ch${OUTPUTDIR/'/eos/cms'/''}/${RENAMEFILE}"
+    elif [[ "${OUTPUTSITE}" == *"ihep.ac.cn"* ]]; then
+      # PLEASE CHECK THE PORT ON THIS LINE AND ADJUST OUTPUTDIR AS WELL
+      COPY_DEST="gsiftp://ccsrm.ihep.ac.cn:2811${OUTPUTDIR}/${RENAMEFILE}"
+    fi
+  else
+    COPY_DEST="${OUTPUTSITE}${OUTPUTDIR}/${RENAMEFILE}"
+  fi
   echo "Running: env -i X509_USER_PROXY=${X509_USER_PROXY} gfal-copy -p -f -t 14400 --verbose --checksum ADLER32 ${COPY_SRC} ${COPY_DEST}"
   declare -i itry=0
   declare -i COPY_STATUS=-1
@@ -85,7 +93,7 @@ if [[ ! -z ${FILENAME} ]];then
     fi
     (( itry += 1 ))
   done
-  # IF GSIFTP FAILS, FALLBACK TO SITE-SPECIFIC PROTOCOLS
+  # IF GSIFTP OR USER-SPECIFIED SITE PROTOCOL FAILS, FALLBACK TO SITE-SPECIFIC PROTOCOL GUESSES
   # (AH, MONKEYS!)
   if [[ $COPY_STATUS -ne 0 ]]; then
     # Found these from https://fts3.cern.ch:8449/fts3/ftsmon and https://gitlab.cern.ch/SITECONF together, please check.
@@ -103,13 +111,13 @@ if [[ ! -z ${FILENAME} ]];then
       # PLEASE CHANGE THE TWO LINE BELOW FOR IHEP CN
       # THE FIRST ADJUSTS PROTOCOL, AND PORT IF NEEDED
       # THE SECOND ADJUSTS DESTINATION FILE NAME BUT IS COMMENTED OUT UNTIL YOU CHECK
-      COPY_DEST="srm://srm.ihep.ac.cn${OUTPUTDIR}/${RENAMEFILE}"
+      COPY_DEST="srm://srm.ihep.ac.cn:8443${OUTPUTDIR}/${RENAMEFILE}"
       #COPY_DEST=${COPY_DEST/'/data/cms'/''}
     elif [[ "${OUTPUTSITE}" == *"m45.ihep.su"* ]]; then
       # PLEASE CHANGE THE TWO LINE BELOW FOR IHEP RU
       # THE FIRST ADJUSTS PROTOCOL, AND PORT IF NEEDED
       # THE SECOND ADJUSTS DESTINATION FILE NAME BUT IS COMMENTED OUT UNTIL YOU CHECK
-      COPY_DEST="srm://dp0015.m45.ihep.su${OUTPUTDIR}/${RENAMEFILE}"
+      COPY_DEST="srm://dp0015.m45.ihep.su:8443${OUTPUTDIR}/${RENAMEFILE}"
       #COPY_DEST=${COPY_DEST/'/pnfs/m45.ihep.su/data/cms'/''}
     fi
     echo "Running alternative endpoint: env -i X509_USER_PROXY=${X509_USER_PROXY} gfal-copy -p -f -t 14400 --verbose --checksum ADLER32 ${COPY_SRC} ${COPY_DEST}"
