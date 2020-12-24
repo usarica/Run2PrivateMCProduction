@@ -70,12 +70,13 @@ if [[ ! -z ${FILENAME} ]];then
   # FIRST TRY GSIFTP
   COPY_SRC="file://${INPUTDIR}/${FILENAME}"
   # IF THE PROTOCOL IS NOT SPECIFIED, DO SOME GUESSWORK
+  # Found these from https://fts3.cern.ch:8449/fts3/ftsmon and https://gitlab.cern.ch/SITECONF together, please check.
   if [[ "${OUTPUTSITE}" != *"://"* ]]; then
     COPY_DEST="gsiftp://gftp.${OUTPUTSITE}${OUTPUTDIR}/${RENAMEFILE}"
     if [[ "${OUTPUTSITE}" == *"eoscms.cern.ch"* ]]; then
       COPY_DEST="gsiftp://eoscmsftp.cern.ch${OUTPUTDIR/'/eos/cms'/''}/${RENAMEFILE}"
     elif [[ "${OUTPUTSITE}" == *"ihep.ac.cn"* ]]; then
-      # PLEASE CHECK THE PORT ON THIS LINE AND ADJUST OUTPUTDIR AS WELL
+      # PLEASE CHECK THE PORT ON THIS LINE AND ADJUST OUTPUTDIR IF NEEDED
       COPY_DEST="gsiftp://ccsrm.ihep.ac.cn:2811${OUTPUTDIR}/${RENAMEFILE}"
     fi
   else
@@ -93,10 +94,9 @@ if [[ ! -z ${FILENAME} ]];then
     fi
     (( itry += 1 ))
   done
-  # IF GSIFTP OR USER-SPECIFIED SITE PROTOCOL FAILS, FALLBACK TO SITE-SPECIFIC PROTOCOL GUESSES
+  # IF GSIFTP OR USER-SPECIFIED SITE PROTOCOL FAILS, FALLBACK TO MORE SITE-SPECIFIC PROTOCOL GUESSWORK
   # (AH, MONKEYS!)
   if [[ $COPY_STATUS -ne 0 ]]; then
-    # Found these from https://fts3.cern.ch:8449/fts3/ftsmon and https://gitlab.cern.ch/SITECONF together, please check.
     if [[ "${OUTPUTSITE}" == *"t2.ucsd.edu"* ]]; then
       COPY_DEST="davs://redirector.t2.ucsd.edu:1094${OUTPUTDIR}/${RENAMEFILE}"
       COPY_DEST=${COPY_DEST/'/hadoop/cms'/''}
@@ -108,13 +108,13 @@ if [[ ! -z ${FILENAME} ]];then
       COPY_DEST="srm://maite.iihe.ac.be:8443${OUTPUTDIR}/${RENAMEFILE}"
       #COPY_DEST=${COPY_DEST/'/pnfs/iihe/cms'/''}
     elif [[ "${OUTPUTSITE}" == *"ihep.ac.cn"* ]]; then
-      # PLEASE CHANGE THE TWO LINE BELOW FOR IHEP CN
+      # PLEASE CHANGE THE TWO LINES BELOW FOR IHEP CN
       # THE FIRST ADJUSTS PROTOCOL, AND PORT IF NEEDED
       # THE SECOND ADJUSTS DESTINATION FILE NAME BUT IS COMMENTED OUT UNTIL YOU CHECK
       COPY_DEST="srm://srm.ihep.ac.cn:8443${OUTPUTDIR}/${RENAMEFILE}"
       #COPY_DEST=${COPY_DEST/'/data/cms'/''}
     elif [[ "${OUTPUTSITE}" == *"m45.ihep.su"* ]]; then
-      # PLEASE CHANGE THE TWO LINE BELOW FOR IHEP RU
+      # PLEASE CHANGE THE TWO LINES BELOW FOR IHEP RU
       # THE FIRST ADJUSTS PROTOCOL, AND PORT IF NEEDED
       # THE SECOND ADJUSTS DESTINATION FILE NAME BUT IS COMMENTED OUT UNTIL YOU CHECK
       COPY_DEST="srm://dp0015.m45.ihep.su:8443${OUTPUTDIR}/${RENAMEFILE}"
