@@ -35,14 +35,15 @@ for f in $(find $chkdir -name condor.sub); do
   let countOK=0
   let dirok=1
   let nsubjobs=0
-  for logfilename in $(ls $d/Logs | grep -e "log_"); do
+  for joblog in $(ls $d | grep -e ".log"); do
+    jobnumber=${joblog//".log"}
+    logfilename="log_job.${jobnumber}.txt"
+
     resb=( )
     rese=( )
     resf=( )
     ress=( )
 
-    jobnumber=${logfilename//log_job.}
-    jobnumber=${jobnumber//.txt}
     runningjob=$(condor_q -constraint "ClusterId==$jobnumber" -af:j '')
     
     fread="$d/Logs/$logfilename"
@@ -133,17 +134,25 @@ for f in $(find $chkdir -name condor.sub); do
   fi
 
   if [[ $dirok -eq 1 ]];then
-    rootdir=${d%/*}
-    lastdir=${d##*/}
-    pushd ${rootdir} &> /dev/null
-    TARFILE="${lastdir}.tar"
+    #rootdir=${d%/*}
+    #lastdir=${d##*/}
+    #pushd ${rootdir} &> /dev/null
+    #TARFILE="${lastdir}.tar"
+    #rm -f $TARFILE
+    #tar Jcf ${TARFILE} ${lastdir} --exclude={*.tar}
+    #if [[ $? -eq 0 ]];then
+    #  echo "- Compressed successfully, so removing the directory"
+    #  rm -rf ${lastdir}
+    #fi
+    #popd &> /dev/null
+
+    TARFILE="${d}.tar"
     rm -f $TARFILE
-    tar Jcf ${TARFILE} ${lastdir} --exclude={*.tar}
+    tar Jcf ${TARFILE} $d --exclude={*.tar}
     if [[ $? -eq 0 ]];then
       echo "- Compressed successfully, so removing the directory"
-      rm -rf ${lastdir}
+      rm -rf $d
     fi
-    popd &> /dev/null
   fi
 
 done

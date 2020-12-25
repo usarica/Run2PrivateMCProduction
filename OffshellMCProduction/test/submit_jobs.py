@@ -7,10 +7,12 @@ import re
 import subprocess
 from pprint import pprint
 import argparse
+from Run2PrivateMCProduction.OffshellMCProduction.getVOMSProxy import getVOMSProxy
+
 
 def run(csvs, tag, gridpack_dir, fragment_dir, direct_submit, condor_site, condor_outdir, doTestRun):
-
-    grid_user = subprocess.check_output("voms-proxy-info -identity | cut -d '/' -f6 | cut -d '=' -f2", shell=True)
+    gridproxy = getVOMSProxy()
+    grid_user = subprocess.check_output("voms-proxy-info -identity -file={} | cut -d '/' -f6 | cut -d '=' -f2".format(gridproxy), shell=True)
     if not grid_user:
        grid_user = os.environ.get("USER")
     grid_user = grid_user.strip()
@@ -122,6 +124,8 @@ def run(csvs, tag, gridpack_dir, fragment_dir, direct_submit, condor_site, condo
                 reqncpus = 2
                 if doTestRun:
                   jobflavor = "microcentury"
+                  reqncpus = 1
+                  reqmem = "1024M"
 
                 outdir_core = os.getcwd() + "/tasks/{}".format(tag)
                 outdir_main = "{}{}".format(outdir_core, dataset)
@@ -150,6 +154,8 @@ def run(csvs, tag, gridpack_dir, fragment_dir, direct_submit, condor_site, condo
 
                   seed = seed + 1000
                   reqdisk = max(int(1), int(float(4.2*1.5*float(nevts_per_job))/1024.))*1024
+                  if float(4.2*1.5*float(nevts_per_job))<float(reqdisk)/2.:
+                     reqdisk = max(512, int(float(4.2*1.5*float(nevts_per_job))+0.5))
                   strreqdisk = "{}M".format(reqdisk)
 
                   jobargs = {

@@ -7,15 +7,12 @@ for f in $(find $chkdir -name condor.sub); do
   cd $d
   echo "Processing $d"
   rm -f Logs/prior_record.tar
-  prevjob=$(ls ./ | grep ".log")
-  if [[ ! -z $prevjob ]];then
+  for prevjob in $(ls ./ | grep ".log"); do
     prevjob=${prevjob//".log"}
-    tar Jcf "prior_record.${prevjob}.tar" Logs/* "${prevjob}.log" --exclude={*.tar}
+    tar Jcf "prior_record.${prevjob}.tar" Logs/*${prevjob}* "${prevjob}.log" --exclude={*.tar}
     rm "${prevjob}.log"
-    rm Logs/*
-  else
-    echo "Could not identify the prior job number in folder $d"
-  fi
+    rm Logs/*${prevjob}*
+  done
 
   condor_submit condor.sub
 

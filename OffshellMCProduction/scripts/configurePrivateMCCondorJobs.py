@@ -13,6 +13,7 @@ import pprint
 import subprocess
 from datetime import date
 from optparse import OptionParser
+from Run2PrivateMCProduction.OffshellMCProduction.getVOMSProxy import getVOMSProxy
 
 
 class BatchManager:
@@ -94,29 +95,16 @@ class BatchManager:
       if "slc7" in scramver and not self.opt.forceSL6:
          singularityver = "cms:rhel7-m202006"
 
-      gridproxy = None
-      if os.getenv("X509_USER_PROXY") is None or not os.getenv("X509_USER_PROXY"):
-         gridproxycheckfiles = [
-            "{}Run2PrivateMCProduction/OffshellMCProduction/test/x509up_u{uid}".format(currentCMSSWBASESRC, uid=os.getuid()),
-            "{home}/x509up_u{uid}".format(home=os.path.expanduser("~"), uid=os.getuid()),
-            "/tmp/x509up_u{uid}".format(uid=os.getuid())
-            ]
-         for gridproxycheckfile in gridproxycheckfiles:
-            if os.path.exists(gridproxycheckfile):
-               gridproxy = gridproxycheckfile
-               break
-      else:
-         gridproxy = os.getenv("X509_USER_PROXY")
-      if gridproxy is None or not os.path.exists(gridproxy):
-         sys.exit("Cannot find a valid grid proxy")
-
+      gridproxy = getVOMSProxy()
       hostname = socket.gethostname()
-      strrequirements = 'Requirements = ((HAS_SINGULARITY=?=True) && (HAS_CVMFS_cms_cern_ch =?= true))'
+      strrequirements = 'Requirements = (HAS_SINGULARITY=?=True && HAS_CVMFS_cms_cern_ch =?= true)'
       strsingularity = ""
       strproject = ""
       if "t2.ucsd.edu" in hostname:
          strsingularity = '+SingularityImage = "/cvmfs/singularity.opensciencegrid.org/cmssw/{SINGULARITYVERSION}"'.format(SINGULARITYVERSION = singularityver)
          strproject = '+project_Name = "cmssurfandturf"'
+      elif "cern.ch" in hostname:
+         strrequirements = 'Requirements = (HAS_SINGULARITY=?=True && HAS_CVMFS_cms_cern_ch =?= true) || (!isUndefined(NODE_MOUNTS_CVMFS) && NODE_MOUNTS_CVMFS && regexp(".*cern.ch.*",TARGET.Machine))'
       #else:
       #   strrequirements = 'Requirements = (OpSysAndVer =?= "SLCern6" || OpSysAndVer =?= "SL6" || OpSysAndVer =?= "SLFermi6") || (HAS_SINGULARITY =?= true || GLIDEIN_REQUIRED_OS =?= "rhel6") || (OSGVO_OS_STRING =?= "RHEL 6" && HAS_CVMFS_cms_cern_ch =?= true)'
 

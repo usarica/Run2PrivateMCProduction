@@ -2,6 +2,9 @@
 
 NCPUS=1
 
+scrdir="$(dirname $0)"
+cd ${scrdir}
+
 export SCRAM_ARCH=slc6_amd64_gcc700
 
 source /cvmfs/cms.cern.ch/cmsset_default.sh
