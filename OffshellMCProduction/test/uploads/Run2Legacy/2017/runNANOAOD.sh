@@ -33,6 +33,7 @@ RUN_STATUS=$?
 if [[ ${RUN_STATUS} -ne 0 ]]; then
   echo "NANOAOD step failed with error code ${RUN_STATUS}. Output log:"
   cat log_nanoaod.txt
+  exit ${RUN_STATUS}
 else
   echo "NANOAOD SUCCESSFUL"
 fi

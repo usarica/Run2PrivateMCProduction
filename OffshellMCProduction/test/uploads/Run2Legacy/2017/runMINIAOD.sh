@@ -33,6 +33,7 @@ RUN_STATUS=$?
 if [[ ${RUN_STATUS} -ne 0 ]]; then
   echo "MINIAOD step failed with error code ${RUN_STATUS}. Output log:"
   cat log_miniaod.txt
+  exit ${RUN_STATUS}
 else
   echo "MINIAOD SUCCESSFUL"
 fi

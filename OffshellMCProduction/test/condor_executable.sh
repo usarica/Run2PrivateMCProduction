@@ -164,6 +164,9 @@ setupenv
 
 for f in $(ls ./ | grep -e .tar); do
   tar xzvf $f
+  if [[ $? -ne 0 ]]; then
+    tar xvf $f
+  fi
   rm $f
 done
 
@@ -241,10 +244,11 @@ RUN_STATUS=$?
 if [[ ${RUN_STATUS} -ne 0 ]]; then
   exit 1
 fi
+echo "time: $(date +%s)"
 
 RUN_STATUS=1
-./runNANOAOD.sh
 echo "time: $(date +%s)"
+./runNANOAOD.sh
 RUN_STATUS=$?
 if [[ ${RUN_STATUS} -ne 0 ]]; then
   exit 1
