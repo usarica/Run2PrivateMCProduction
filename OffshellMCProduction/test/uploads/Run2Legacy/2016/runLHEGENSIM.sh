@@ -43,6 +43,7 @@ RUN_STATUS=$?
 if [[ ${RUN_STATUS} -ne 0 ]]; then
   echo "pLHE step failed with error code ${RUN_STATUS}. Output:"
   cat log_plhe.txt
+  echo ${RUN_STATUS} >> ERROR
   exit ${RUN_STATUS}
 else
   echo "pLHE SUCCESSFUL"
@@ -56,6 +57,7 @@ RUN_STATUS=$?
 if [[ ${RUN_STATUS} -ne 0 ]]; then
   echo "GEN-SIM step failed with error code ${RUN_STATUS}. Output:"
   cat log_gensim.txt
+  echo ${RUN_STATUS} >> ERROR
   exit ${RUN_STATUS}
 else
   echo "GEN-SIM SUCCESSFUL"

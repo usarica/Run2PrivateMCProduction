@@ -111,13 +111,14 @@ class BatchManager:
          sys.exit("Cannot find a valid grid proxy")
 
       hostname = socket.gethostname()
-      strrequirements = ""
+      strrequirements = 'Requirements = ((HAS_SINGULARITY=?=True) && (HAS_CVMFS_cms_cern_ch =?= true))'
+      strsingularity = ""
       strproject = ""
       if "t2.ucsd.edu" in hostname:
-         strrequirements = 'Requirements = ((HAS_SINGULARITY=?=True) && (HAS_CVMFS_cms_cern_ch =?= true)) || (regexp("(uaf-[0-9]{{1,2}}|uafino)\.", TARGET.Machine) && !(TARGET.SlotID>(TotalSlots<14 ? 3:7) && regexp("uaf-[0-9]", TARGET.machine)))'
+         strsingularity = '+SingularityImage = "/cvmfs/singularity.opensciencegrid.org/cmssw/{SINGULARITYVERSION}"'.format(SINGULARITYVERSION = singularityver)
          strproject = '+project_Name = "cmssurfandturf"'
-      else:
-         strrequirements = 'Requirements = (OpSysAndVer =?= "SLCern6" || OpSysAndVer =?= "SL6" || OpSysAndVer =?= "SLFermi6") || (HAS_SINGULARITY =?= true || GLIDEIN_REQUIRED_OS =?= "rhel6") || (OSGVO_OS_STRING =?= "RHEL 6" && HAS_CVMFS_cms_cern_ch =?= true)'
+      #else:
+      #   strrequirements = 'Requirements = (OpSysAndVer =?= "SLCern6" || OpSysAndVer =?= "SL6" || OpSysAndVer =?= "SLFermi6") || (HAS_SINGULARITY =?= true || GLIDEIN_REQUIRED_OS =?= "rhel6") || (OSGVO_OS_STRING =?= "RHEL 6" && HAS_CVMFS_cms_cern_ch =?= true)'
 
       scriptargs = {
          "batchScript" : self.opt.batchscript,
@@ -130,7 +131,7 @@ class BatchManager:
          "outLog" : self.opt.outlog,
          "errLog" : self.opt.errlog,
          "QUEUE" : self.opt.batchqueue,
-         "SINGULARITYVERSION" : singularityver,
+         "SINGULARITY" : strsingularity,
          "SUBMITDIR" : currendir_noCMSSWsrc,
          "UPLOADS" : self.uploads,
          "NEVTS" : self.opt.nevents,
@@ -166,8 +167,8 @@ notification = Never
 should_transfer_files = YES
 when_to_transfer_output = ON_EXIT_OR_EVICT
 +WantRemoteIO = false
-+SingularityImage = "/cvmfs/singularity.opensciencegrid.org/cmssw/{SINGULARITYVERSION}"
 {REQUIREMENTS}
+{SINGULARITY}
 {PROJECTNAME}
 
 

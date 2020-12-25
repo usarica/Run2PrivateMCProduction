@@ -171,86 +171,52 @@ for f in $(ls ./ | grep -e .tar); do
 done
 
 RUNDIR=$(pwd)
+echo "Current directory: ${RUNDIR}"
+ls -la
 
 # This is a file to keep a list of transferables
 touch EXTERNAL_TRANSFER_LIST.LST
 
-chmod 755 runcmsgrid.sh
-declare -i LHE_STATUS=1
-declare -i LHE_SEED=${SEED}
-declare -i LHE_ITER=0
-while [[ ${LHE_STATUS} -ne 0 ]]; do
-  echo "Grid pack iteration ${LHE_ITER} with seed ${LHE_SEED}"
-  echo "time: $(date +%s)"
-
-  ./runcmsgrid.sh ${NEVTS} ${LHE_SEED} ${NCPUS}
-  LHE_STATUS=$?
-
-  if [[ ${LHE_STATUS} -eq 0 ]]; then
-    if [[ ! -s cmsgrid_final.lhe ]]; then
-      LHE_STATUS=99
-    elif [[ $(tail -10 cmsgrid_final.lhe | grep -e '</LesHouchesEvents>') != *"</LesHouchesEvents>"* ]]; then
-      LHE_STATUS=98
-    else
-      nevtbegin=$(grep -e '<event>' cmsgrid_final.lhe | wc -l)
-      nevtend=$(grep -e '</event>' cmsgrid_final.lhe | wc -l)
-      if [[ $nevtbegin -ne $nevtend ]]; then
-        LHE_STATUS=97
-      fi
-    fi
-  fi
-
-  echo "- Iteration is done."
-  echo "time: $(date +%s)"
-
-  LHE_SEED=$(( LHE_SEED + 1 ))
-  LHE_ITER=$(( LHE_ITER + 1 ))
-  if [[ ${LHE_ITER} -eq 1000 ]]; then
-    break
-  fi
-done
-
-if [[ ${LHE_STATUS} -ne 0 ]]; then
-  echo "LHE generation failed with exit status ${LHE_STATUS}."
-  exit 1
-else
-  echo "LHE GRIDPACK SUCCESSFUL"
-fi
+# This is for singularity cache to be stored
+export SINGULARITY_CACHEDIR="/tmp/$(whoami)/singularity"
 
 
-declare -i RUN_STATUS=1
+chmod 777 run*.sh
+
 echo "time: $(date +%s)"
-./runLHEGENSIM.sh ${NCPUS}
-RUN_STATUS=$?
-if [[ ${RUN_STATUS} -ne 0 ]]; then
+#./runLHERAW.sh ${NEVTS} ${SEED} ${NCPUS}
+singularity run -B /cvmfs -B /etc/grid-security --no-home docker://cmssw/slc6:latest $(echo $(pwd)/runLHERAW.sh ${NEVTS} ${SEED} ${NCPUS})
+if [[ -e ERROR ]]; then
   exit 1
 fi
 
-RUN_STATUS=1
 echo "time: $(date +%s)"
-./runPREMIXAOD.sh ${NCPUS}
-RUN_STATUS=$?
-if [[ ${RUN_STATUS} -ne 0 ]]; then
+#./runLHEGENSIM.sh ${NCPUS}
+singularity run -B /cvmfs -B /etc/grid-security --no-home docker://cmssw/slc6:latest $(echo $(pwd)/runLHEGENSIM.sh ${NCPUS})
+if [[ -e ERROR ]]; then
+  exit 1
+fi
+
+echo "time: $(date +%s)"
+#./runPREMIXAOD.sh ${NCPUS}
+singularity run -B /cvmfs -B /etc/grid-security --no-home docker://cmssw/slc6:latest $(echo $(pwd)/runPREMIXAOD.sh ${NCPUS})
+if [[ -e ERROR ]]; then
   exit 1
 fi
 
 # MINIAODSIM AND NANOAODSIM steps must use ncpus=1
 # This is to avoid technicalitiies in TFormula evaluations.
-# (AH, ROOT MONKEYS!)
-RUN_STATUS=1
 echo "time: $(date +%s)"
-./runMINIAOD.sh
-RUN_STATUS=$?
-if [[ ${RUN_STATUS} -ne 0 ]]; then
+#./runMINIAOD.sh
+singularity run -B /cvmfs -B /etc/grid-security --no-home docker://cmssw/slc6:latest $(echo $(pwd)/runMINIAOD.sh)
+if [[ -e ERROR ]]; then
   exit 1
 fi
-echo "time: $(date +%s)"
 
-RUN_STATUS=1
 echo "time: $(date +%s)"
-./runNANOAOD.sh
-RUN_STATUS=$?
-if [[ ${RUN_STATUS} -ne 0 ]]; then
+#./runNANOAOD.sh
+singularity run -B /cvmfs -B /etc/grid-security --no-home docker://cmssw/slc6:latest $(echo $(pwd)/runNANOAOD.sh)
+if [[ -e ERROR ]]; then
   exit 1
 fi
 
@@ -264,19 +230,23 @@ echo "time: $(date +%s)"
 mkdir LHE
 mv cmsgrid_final.lhe cmsgrid_final_${SEED}.lhe
 mv cmsgrid_tmp.lhe cmsgrid_final_undecayed_${SEED}.lhe
+chmod 775 cmsgrid_final*.lhe
 tar Jcvf output_${SEED}.tar cmsgrid_final_${SEED}.lhe cmsgrid_final_undecayed_${SEED}.lhe
 mv output_${SEED}.tar LHE/
+chmod -R 775 LHE
 echo LHE/output_${SEED}.tar >> EXTERNAL_TRANSFER_LIST.LST
 
 # Make the MINIAODSIM directory and move the file there
 mkdir MINIAODSIM
 mv miniaod.root MINIAODSIM/output_${SEED}.root
-echo MINIAODSIM/output_${SEED}.tar >> EXTERNAL_TRANSFER_LIST.LST
+chmod -R 775 MINIAODSIM
+echo MINIAODSIM/output_${SEED}.root >> EXTERNAL_TRANSFER_LIST.LST
 
 # Make the NANOAODSIM directory and move the file there
 mkdir NANOAODSIM
 mv nanoaod.root NANOAODSIM/output_${SEED}.root
-echo NANOAODSIM/output_${SEED}.tar >> EXTERNAL_TRANSFER_LIST.LST
+chmod -R 775 NANOAODSIM
+echo NANOAODSIM/output_${SEED}.root >> EXTERNAL_TRANSFER_LIST.LST
 
 
 echo "Files being transfered:"

@@ -43,6 +43,7 @@ RUN_STATUS=$?
 if [[ ${RUN_STATUS} -ne 0 ]]; then
   echo "PREMIX-RAW step failed with error code ${RUN_STATUS}. Output:"
   cat log_premixraw.txt
+  echo ${RUN_STATUS} >> ERROR
   exit ${RUN_STATUS}
 else
   echo "PREMIX-RAW SUCCESSFUL"
@@ -55,6 +56,7 @@ RUN_STATUS=$?
 if [[ ${RUN_STATUS} -ne 0 ]]; then
   echo "AOD step failed with error code ${RUN_STATUS}. Output:"
   cat log_aod.txt
+  echo ${RUN_STATUS} >> ERROR
   exit ${RUN_STATUS}
 else
   echo "AOD SUCCESSFUL"
