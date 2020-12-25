@@ -112,14 +112,17 @@ class BatchManager:
 
       hostname = socket.gethostname()
       strrequirements = ""
+      strproject = ""
       if "t2.ucsd.edu" in hostname:
          strrequirements = 'Requirements = ((HAS_SINGULARITY=?=True) && (HAS_CVMFS_cms_cern_ch =?= true)) || (regexp("(uaf-[0-9]{{1,2}}|uafino)\.", TARGET.Machine) && !(TARGET.SlotID>(TotalSlots<14 ? 3:7) && regexp("uaf-[0-9]", TARGET.machine)))'
+         strproject = '+project_Name = "cmssurfandturf"'
       else:
          strrequirements = 'Requirements = (OpSysAndVer =?= "SLCern6" || OpSysAndVer =?= "SL6" || OpSysAndVer =?= "SLFermi6") || (HAS_SINGULARITY =?= true || GLIDEIN_REQUIRED_OS =?= "rhel6") || (OSGVO_OS_STRING =?= "RHEL 6" && HAS_CVMFS_cms_cern_ch =?= true)'
 
       scriptargs = {
          "batchScript" : self.opt.batchscript,
          "GRIDPROXY" : gridproxy,
+         "PROJECTNAME" : strproject,
          "SITES" : self.opt.sites,
          "CONDORSITE" : self.opt.condorsite,
          "CONDOROUTDIR" : self.opt.condoroutdir,
@@ -159,12 +162,13 @@ transfer_executable=True
 transfer_input_files    = {UPLOADS}
 transfer_output_files = ""
 +Owner = undefined
-+project_Name = "cmssurfandturf"
 notification = Never
 should_transfer_files = YES
 when_to_transfer_output = ON_EXIT_OR_EVICT
-{REQUIREMENTS}
++WantRemoteIO = false
 +SingularityImage = "/cvmfs/singularity.opensciencegrid.org/cmssw/{SINGULARITYVERSION}"
+{REQUIREMENTS}
+{PROJECTNAME}
 
 
 queue
