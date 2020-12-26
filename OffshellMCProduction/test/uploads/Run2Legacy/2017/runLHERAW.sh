@@ -14,7 +14,8 @@ while [[ ${RUN_STATUS} -ne 0 ]]; do
   echo "Grid pack iteration ${LHE_ITER} with seed ${LHE_SEED}"
   echo "time: $(date +%s)"
 
-  ./runcmsgrid.sh ${NEVTS} ${LHE_SEED} ${NCPUS}
+  rm -f log_rawlhe.txt
+  ./runcmsgrid.sh ${NEVTS} ${LHE_SEED} ${NCPUS} &> log_rawlhe.txt
   RUN_STATUS=$?
 
   if [[ ${RUN_STATUS} -eq 0 ]]; then
@@ -25,7 +26,7 @@ while [[ ${RUN_STATUS} -ne 0 ]]; do
     else
       nevtbegin=$(grep -e '<event>' cmsgrid_final.lhe | wc -l)
       nevtend=$(grep -e '</event>' cmsgrid_final.lhe | wc -l)
-      if [[ $nevtbegin -ne $nevtend ]]; then
+      if [[ ${nevtbegin} -ne ${NEVTS} ]] || [[ ${nevtend} -ne ${NEVTS} ]]; then
         RUN_STATUS=97
       fi
     fi
@@ -42,7 +43,8 @@ while [[ ${RUN_STATUS} -ne 0 ]]; do
 done
 
 if [[ ${RUN_STATUS} -ne 0 ]]; then
-  echo "LHE gridpack step failed with error code ${RUN_STATUS}."
+  echo "LHE gridpack step failed with error code ${RUN_STATUS}. Output:"
+  cat log_rawlhe.txt
   echo ${RUN_STATUS} >> ERROR
   exit ${RUN_STATUS}
 else

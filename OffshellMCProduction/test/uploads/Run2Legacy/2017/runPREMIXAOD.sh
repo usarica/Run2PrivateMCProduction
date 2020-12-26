@@ -41,8 +41,19 @@ fi
 
 cmd="cmsRun -n ${NCPUS} premixraw_cfg.py"
 echo "Running ${cmd}"
+# Try the premix step twice because it could sometimes just fail to connect.
 ${cmd} &> log_premixraw.txt
 RUN_STATUS=$?
+if [[ ${RUN_STATUS} -ne 0 ]]; then
+  echo "PREMIX-RAW step failed once with error code ${RUN_STATUS}. Output:"
+  cat log_premixraw.txt
+  echo "Trying a second time after 30 minutes..."
+  sleep 1800
+  rm -f log_premixraw.txt
+  echo "Running ${cmd} one last time..."
+  ${cmd} &> log_premixraw.txt
+  RUN_STATUS=$?
+fi
 if [[ ${RUN_STATUS} -ne 0 ]]; then
   echo "PREMIX-RAW step failed with error code ${RUN_STATUS}. Output:"
   cat log_premixraw.txt

@@ -48,39 +48,45 @@ for f in $(find $chkdir -name condor.sub); do
     
     fread="$d/Logs/$logfilename"
 
-    if [[ $skiplongfile -eq 1 ]]; then
-      let freadsize=$(stat --format=%s $fread)
-      if [[ $freadsize -gt 1000000 ]]; then
-        echo "Skipping $fread because its size = $freadsize > 1000000"
-        continue
+    if [[ -e ${fread} ]]; then
+      if [[ $skiplongfile -eq 1 ]]; then
+        let freadsize=$(stat --format=%s $fread)
+        if [[ $freadsize -gt 1000000 ]]; then
+          echo "Skipping $fread because its size = $freadsize > 1000000"
+          continue
+        fi
+        #echo "File $fread with size $freadsize is not long..."
       fi
-      #echo "File $fread with size $freadsize is not long..."
     fi
 
     let nsubjobs=$nsubjobs+1
 
-    if [[ $islongfile -eq 1 ]]; then
-      tmpfile="tail_$logfilename"
-      echo "Truncating $fread to $tmpfile"
-      tail -1000 $fread &> $tmpfile
-      fread=$tmpfile
-      echo "Will read $fread"
+    if [[ -e ${fread} ]]; then
+      if [[ $islongfile -eq 1 ]]; then
+        tmpfile="tail_$logfilename"
+        echo "Truncating $fread to $tmpfile"
+        tail -1000 $fread &> $tmpfile
+        fread=$tmpfile
+        echo "Will read $fread"
+      fi
     fi
 
-    while IFS='' read -r line || [[ -n "$line" ]]; do
-      if [[ "$line" == *"begin copying output"* ]]; then
-        resb+=( "$line" )
-      elif [[ "$line" == *"end copying output"* ]]; then
-        rese+=( "$line" )
-      elif [[ "$line" == *"Running: env -i "* ]]; then
-        resf+=( "$line" )
-      elif [[ "$line" == *"Copied successfully"* ]]; then
-        ress+=( "$line" )
-      fi
-    done < "$fread"
+    if [[ -e ${fread} ]]; then
+      while IFS='' read -r line || [[ -n "$line" ]]; do
+        if [[ "$line" == *"begin copying output"* ]]; then
+          resb+=( "$line" )
+        elif [[ "$line" == *"end copying output"* ]]; then
+          rese+=( "$line" )
+        elif [[ "$line" == *"Running: env -i "* ]]; then
+          resf+=( "$line" )
+        elif [[ "$line" == *"Copied successfully"* ]]; then
+          ress+=( "$line" )
+        fi
+      done < "$fread"
+    fi
 
     if [[ $islongfile -eq 1 ]]; then
-      rm $fread
+      rm -f $fread
     fi
 
     let size_resb=${#resb[@]}
@@ -93,23 +99,9 @@ for f in $(find $chkdir -name condor.sub); do
       let nUNKNOWN=$nUNKNOWN+1
       let dirok=0
     elif [[ $size_resb -gt 0 ]] && [[ $size_resb -eq $size_rese ]] && [[ $size_resb -eq $size_ress ]] && [[ $size_resb -eq $size_resf ]];then
-      let nOutputExist=0
-      for rf in "${resf[@]}";do
-        rf="${rf//*'gsiftp://gftp.t2.ucsd.edu'}"
-
-        if [[ -s $rf ]];then
-          let nOutputExist=${nOutputExist}+1
-        fi
-      done
-      if [[ $nOutputExist -eq $size_resf ]];then
-        echo "$d ran successfully with $nOutputExist files."
-        let nOK=$nOK+1
-        let countOK=$countOK+1
-      else
-        echo "$d ran successfully, but some files do not exist! (Nbegin, Ncopyrun, Nsuccess, Nend, Nexists) = ( $size_resb, $size_resf, $size_ress, $size_rese, $nOutputExist )"
-        let nFILEDNE=$nFILEDNE+1
-        let dirok=0
-      fi
+      echo "$d ran successfully."
+      let nOK=$nOK+1
+      let countOK=$countOK+1
     else
       echo "$d failed. (Nbegin, Ncopyrun, Nsuccess, Nend) = ( $size_resb, $size_resf, $size_ress, $size_rese )"
       let nFAIL=$nFAIL+1
@@ -157,4 +149,6 @@ for f in $(find $chkdir -name condor.sub); do
 
 done
 
+declare -i nTOTAL=$(( nOK + nCOPYFAIL + nFILEDNE + nFAIL + nUNKNOWN ))
+echo "Total jobs checked: ${nTOTAL}"
 echo "(OK:COPY_FAIL:FILE_DNE:FAIL:UNKNOWN) = (${nOK}:${nCOPYFAIL}:${nFILEDNE}:${nFAIL}:${nUNKNOWN})"

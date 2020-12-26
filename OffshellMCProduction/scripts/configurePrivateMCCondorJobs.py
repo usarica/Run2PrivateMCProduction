@@ -79,9 +79,6 @@ class BatchManager:
       if not self.uploads:
          sys.exit("You must specify extra uploads.")
 
-      for theOpt in optchecks:
-         print("Option {}={}".format(theOpt,getattr(self.opt, theOpt)))
-
       self.submitJobs()
 
 
@@ -103,10 +100,9 @@ class BatchManager:
       if "t2.ucsd.edu" in hostname:
          strsingularity = '+SingularityImage = "/cvmfs/singularity.opensciencegrid.org/cmssw/{SINGULARITYVERSION}"'.format(SINGULARITYVERSION = singularityver)
          strproject = '+project_Name = "cmssurfandturf"'
-      elif "cern.ch" in hostname:
-         strrequirements = 'Requirements = (HAS_SINGULARITY=?=True && HAS_CVMFS_cms_cern_ch =?= true) || (!isUndefined(NODE_MOUNTS_CVMFS) && NODE_MOUNTS_CVMFS && regexp(".*cern.ch.*",TARGET.Machine))'
-      #else:
-      #   strrequirements = 'Requirements = (OpSysAndVer =?= "SLCern6" || OpSysAndVer =?= "SL6" || OpSysAndVer =?= "SLFermi6") || (HAS_SINGULARITY =?= true || GLIDEIN_REQUIRED_OS =?= "rhel6") || (OSGVO_OS_STRING =?= "RHEL 6" && HAS_CVMFS_cms_cern_ch =?= true)'
+      else:
+         strrequirements = 'Requirements            = (HAS_SINGULARITY=?=True && HAS_CVMFS_cms_cern_ch =?= true) || (!isUndefined(NODE_MOUNTS_CVMFS) && NODE_MOUNTS_CVMFS)'
+         #strrequirements = 'Requirements            = (OpSysAndVer =?= "SLCern6" || OpSysAndVer =?= "SL6" || OpSysAndVer =?= "SLFermi6") || (HAS_SINGULARITY =?= true || GLIDEIN_REQUIRED_OS =?= "rhel6") || (OSGVO_OS_STRING =?= "RHEL 6" && HAS_CVMFS_cms_cern_ch =?= true)'
 
       scriptargs = {
          "batchScript" : self.opt.batchscript,
@@ -132,8 +128,8 @@ class BatchManager:
       }
 
       scriptcontents = """
-universe={QUEUE}
-+DESIRED_Sites="{SITES}"
+universe                = {QUEUE}
++DESIRED_Sites          = "{SITES}"
 executable              = {batchScript}
 arguments               = {SUBMITDIR} {NEVTS} {SEED} {NCPUS} {CONDORSITE} {CONDOROUTDIR}
 Initialdir              = {outDir}
@@ -147,14 +143,14 @@ request_disk            = {REQDISK}
 x509userproxy           = {GRIDPROXY}
 #https://www-auth.cs.wisc.edu/lists/htcondor-users/2010-September/msg00009.shtml
 periodic_remove         = JobStatus == 5
-transfer_executable=True
+transfer_executable     = True
 transfer_input_files    = {UPLOADS}
-transfer_output_files = ""
-+Owner = undefined
-notification = Never
-should_transfer_files = YES
+transfer_output_files   = ""
++Owner                  = undefined
+notification            = Never
+should_transfer_files   = YES
 when_to_transfer_output = ON_EXIT_OR_EVICT
-+WantRemoteIO = false
++WantRemoteIO           = false
 {REQUIREMENTS}
 {SINGULARITY}
 {PROJECTNAME}

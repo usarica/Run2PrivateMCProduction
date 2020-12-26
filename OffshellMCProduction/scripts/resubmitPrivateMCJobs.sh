@@ -9,9 +9,15 @@ for f in $(find $chkdir -name condor.sub); do
   rm -f Logs/prior_record.tar
   for prevjob in $(ls ./ | grep ".log"); do
     prevjob=${prevjob//".log"}
-    tar Jcf "prior_record.${prevjob}.tar" Logs/*${prevjob}* "${prevjob}.log" --exclude={*.tar}
+    strstdlogs=""
+    for stdlog in $(ls Logs | grep -e ${prevjob}); do
+      strstdlogs="${strstdlogs} Logs/${stdlog}"
+    done
+    tar Jcf "prior_record.${prevjob}.tar" ${strstdlogs} "${prevjob}.log" --exclude={*.tar}
     rm "${prevjob}.log"
-    rm Logs/*${prevjob}*
+    for stdlog in $(echo ${strstdlogs}); do
+      rm ${stdlog}
+    done
   done
 
   condor_submit condor.sub
