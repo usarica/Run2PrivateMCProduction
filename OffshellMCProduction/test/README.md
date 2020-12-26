@@ -54,7 +54,7 @@ Otherwise you will have to search over the bigbird machines to find where your j
 ```
 python submit_jobs.py --tag cern_test_$(whoami) --gridpack_dir=/afs/cern.ch/work/u/usarica/public/Offshell_2l2nu (/home/users/usarica/work/GenStudies/Offshell2020_Gridpacks on UCSD) \
   --condor_site=t2.ucsd.edu (or iihe.ac.be) --condor_outdir=/hadoop/cms/store/user/$(whoami)/Offshell_2L2Nu/PrivateMC (or /pnfs/iihe/cms/store/user/$(whoami)/Offshell_2L2Nu/PrivateMC) \
-  --testrun test.csv --overwrite --watch_email="[YOUR EMAIL]"
+  --testrun test.csv --watch_email="[YOUR EMAIL]"
 ```
 
 Please select the appropriate sites and paths based on the origin and target sites (you have to have write permissions on the target sites). The test is basically going to check if you have this permission.
@@ -74,7 +74,7 @@ The watch command will keep your terminal busy until the jobs are complete. If y
 ```
 python submit_jobs.py --tag 201226 --gridpack_dir=/afs/cern.ch/work/u/usarica/public/Offshell_2l2nu (/home/users/usarica/work/GenStudies/Offshell2020_Gridpacks on UCSD) \
   --condor_site=t2.ucsd.edu (or iihe.ac.be) --condor_outdir=/hadoop/cms/store/user/$(whoami)/Offshell_2L2Nu/PrivateMC (or /pnfs/iihe/cms/store/user/$(whoami)/Offshell_2L2Nu/PrivateMC) \
-  submission_ZZ2L2Nu_201222_$(whoami).csv --overwrite --watch_email="[YOUR EMAIL]"
+  submission_ZZ2L2Nu_201222_$(whoami).csv --watch_email="[YOUR EMAIL]"
 ```
 
 Here, the line assumes that the output of 'whoami' is the same as your Grid user name (this is most often the case). If not, please adjust the command appropriately.
