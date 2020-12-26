@@ -63,8 +63,7 @@ while [[ 1 ]]; do
   # Produce a daily report
   current_time=$(date +%s)
   time_difference=$(( current_time - time_offset ))
-  #if [[ ${time_difference} -ge 86400 ]]; then
-  if [[ ${time_difference} -ge 0 ]]; then
+  if [[ ${time_difference} -ge 86400 ]]; then
     time_offset=${current_time}
     if [[ ! -z ${webdir} ]]; then
       rm -rf ${webdir}/*
