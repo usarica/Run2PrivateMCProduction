@@ -2,10 +2,23 @@
 
 1. Before you do anything else, make sure you have valid grid certificates on the machines you are going to run (i.e. lxplus, ucsd). You may refer to [this page](https://twiki.cern.ch/twiki/bin/view/CMSPublic/WorkBookStartingGrid).
 
-2. Take a note of the machine you logged in (important!), and set up your CMSSW area:
+2. Take a note of the machine you logged in (important!) and get into a screen via
+
+(lxplus)
 
 ```
 AKLOG=/usr/bin/aklog krenew -b -t -- screen -D -m # This is to be used on lxplus to get persistent screens. Otherwise, use 'screen'
+screen -x
+```
+
+(UCSD)
+
+```
+screen
+```
+
+and then set up your CMSSW area:
+```
 cd [YOUR WORK AREA] # Inside the screen
 export SCRAM_ARCH=slc7_amd64_gcc700 # can also use slc6_amd64_gcc700, depends on the OS of your machine
 source /cvmfs/cms.cern.ch/cmsset_default.sh
