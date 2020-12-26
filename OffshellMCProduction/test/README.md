@@ -84,6 +84,7 @@ However, there could of course be legitimate reasons to make it different such a
 
 The persistent screen will ensure that the watch script works. That script will send you messages if soemthing goes wrong, if your credentials are going to expire, or if the jobs complete.
 It will also give you a daily report of failed jobs, if any. Please be advised that it is not perfect, so you may have to log back in (to the same machine!) and the same screen to check if it is still running.
+It might also stop running if the node is reset.
 You may contact for further assistance if needed.
 
 Good luck!
