@@ -1,3 +1,3 @@
 channel,year,short_process,mass,nevts_total,nevts_per_job,gridpack,pythia_fragment
 ZZ2L2Nu,2016,GGH,200,20,10,gridpacks/201222/ZZ2L2Nu_noExtraPDFs/2016/GGH/200/gridpack.tar.gz,fragments/2016/GGH/fragment.py
-ZZ2L2Nu,2016,VBFH,200,20,10,gridpacks/201222/ZZ2L2Nu_noExtraPDFs/2016/VBFH/200/gridpack.tar.gz,fragments/2016/GGH/fragment.py
+ZZ2L2Nu,2016,VBFH,200,20,10,gridpacks/201222/ZZ2L2Nu_noExtraPDFs/2016/VBFH/200/gridpack.tar.gz,fragments/2016/VBFH/fragment.py
