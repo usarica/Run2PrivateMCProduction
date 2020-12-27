@@ -16,7 +16,7 @@ if [[ "${chkdir}" != *"tasks/"* ]]; then
   echo "The check directory must be a subdirectory under 'tasks/'."
   exit 1
 fi
-echo "CondorWatch is launched for ${chkdir}"
+
 watchlog=watchlog_${chkdir##*/}.txt
 thehost=$(hostname)
 
@@ -24,6 +24,11 @@ USER_ID=$(id -u)
 homedir=$(readlink -f ~)
 proxy_file=${homedir}/x509up_u${USER_ID}
 let proxy_valid_threshold=86400 # 1 day
+
+
+echo "CondorWatch is launched for ${chkdir} by $(whoami):${thehost}."
+mail -s "[CondorWatch] ($(whoami):${thehost}) BEGIN" $mymail <<< "A watch on ${curdir}/${chkdir} is launched."
+
 
 time_offset=$(date +%s)
 
