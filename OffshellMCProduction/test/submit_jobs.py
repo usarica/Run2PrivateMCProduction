@@ -156,14 +156,9 @@ def run(csvs, tag, gridpack_dir, fragment_dir, direct_submit, condor_site, condo
                raise RuntimeError("Failed to create {}".format(runscripts))
             # We also need to upload the Pythia fragment, but it needs to be done via symlinking for renaming purposes
             pythia_fragment_dset = "{}/fragment.py".format(outdir_main)
-            if doOverwrite:
-               if os.path.exists(pythia_fragment_dset):
-                  os.unlink(pythia_fragment_dset)
-               os.symlink(pythia_fragment, pythia_fragment_dset)
-            else:
-               if os.path.islink(pythia_fragment_dset) and not os.path.exists(pythia_fragment_dset):
-                  os.unlink(pythia_fragment_dset)
-                  os.symlink(pythia_fragment, pythia_fragment_dset)
+            if os.path.exists(pythia_fragment_dset):
+               os.unlink(pythia_fragment_dset)
+            os.symlink(pythia_fragment, pythia_fragment_dset)
 
             batchscript = outdir_main + "/executable.sh"
             if doOverwrite or not os.path.exists(batchscript):
