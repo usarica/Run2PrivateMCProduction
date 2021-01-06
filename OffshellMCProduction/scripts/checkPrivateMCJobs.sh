@@ -26,6 +26,10 @@ declare -a rese
 declare -a resf
 declare -a ress
 
+scheddcmd=""
+if [[ -e FIXED_SCHEDD ]]; then
+  scheddcmd="-name $(cat FIXED_SCHEDD)"
+fi
 for f in $(find $chkdir -name condor.sub); do
   d=${f//\/condor.sub}
   if [[ ! -d $d ]];then
@@ -44,7 +48,7 @@ for f in $(find $chkdir -name condor.sub); do
     resf=( )
     ress=( )
 
-    runningjob=$(condor_q -constraint "ClusterId==$jobnumber" -af:j '')
+    runningjob=$(condor_q ${scheddcmd} -constraint "ClusterId==$jobnumber" -af:j '')
     
     fread="$d/Logs/$logfilename"
 
@@ -126,18 +130,6 @@ for f in $(find $chkdir -name condor.sub); do
   fi
 
   if [[ $dirok -eq 1 ]];then
-    #rootdir=${d%/*}
-    #lastdir=${d##*/}
-    #pushd ${rootdir} &> /dev/null
-    #TARFILE="${lastdir}.tar"
-    #rm -f $TARFILE
-    #tar Jcf ${TARFILE} ${lastdir} --exclude={*.tar}
-    #if [[ $? -eq 0 ]];then
-    #  echo "- Compressed successfully, so removing the directory"
-    #  rm -rf ${lastdir}
-    #fi
-    #popd &> /dev/null
-
     TARFILE="${d}.tar"
     rm -f $TARFILE
     tar Jcf ${TARFILE} $d --exclude={*.tar}

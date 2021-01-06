@@ -2,6 +2,11 @@
 
 chkdir=$1
 
+scheddcmd=""
+if [[ -e FIXED_SCHEDD ]]; then
+  scheddcmd="-name $(cat FIXED_SCHEDD)"
+fi
+
 for f in $(find $chkdir -name condor.sub); do
   d=${f//\/condor.sub}
   cd $d
@@ -20,7 +25,7 @@ for f in $(find $chkdir -name condor.sub); do
     done
   done
 
-  condor_submit condor.sub
+  condor_submit ${scheddcmd} condor.sub
 
   cd - &> /dev/null
 done

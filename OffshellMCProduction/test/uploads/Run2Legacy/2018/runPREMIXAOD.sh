@@ -63,7 +63,7 @@ else
   echo "PREMIX-RAW SUCCESSFUL"
 fi
 
-cmd="cmsRun -n ${NCPUS} aod_cfg.py"
+cmd="cmsRun -n 1 aod_cfg.py"
 echo "Running ${cmd}"
 ${cmd} &> log_aod.txt
 RUN_STATUS=$?
