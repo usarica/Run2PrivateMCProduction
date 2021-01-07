@@ -34,8 +34,8 @@ declare -i njobs=$(grep -e failed watchlog_${tag}.txt | wc -l)
 echo "${njobs} jobs will be resubmitted. Waiting for 60 seconds in case you find this is a mistake and want to kill this script."
 sleep 60
 
-for dd in $(grep -e failed watchlog_${tag}.txt | awk '{print $1}'); do
-  resubmtPrivateMCJobs.sh $dd
+for dd in $(grep -e failed watchlog_${tag}.txt | awk '{print $1}' | sort | uniq); do
+  resubmitPrivateMCJobs.sh $dd
 done
 rm -f watchlog_${tag}.txt
 
