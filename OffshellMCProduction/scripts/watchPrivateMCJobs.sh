@@ -65,6 +65,8 @@ while [[ 1 ]]; do
     break
   fi
 
+  failed_dirs=( $(grep -e "failed" ${watchlog} | awk '{print $1}' | sort | uniq) )
+
   # Produce a daily report
   current_time=$(date +%s)
   time_difference=$(( current_time - time_offset ))
@@ -74,7 +76,7 @@ while [[ 1 ]]; do
       rm -rf ${webdir}/*
       cp ${watchlog} ${webdir}/
       mkdir -p ${webdir}/FailedJobs
-      for dd in $(grep -e "failed" ${watchlog} | awk '{print $1}'); do
+      for dd in "${failed_dirs[@]}"; do
         newlogdir=${dd//${chkdir}}
         mkdir -p ${webdir}/FailedJobs/${newlogdir}
         for ff in $(ls ${dd}/Logs | grep -v .tar); do
@@ -86,7 +88,7 @@ while [[ 1 ]]; do
     fi
   fi
 
-  for dd in $(grep -e "failed" ${watchlog} | awk '{print $1}'); do
+  for dd in "${failed_dirs[@]}"; do
     resubmitPrivateMCJobs.sh ${dd}
     if [[ $? -ne 0 ]]; then
       mail -s "[CondorWatch] ($(whoami):${thehost}) ERROR" $mymail <<< "Command 'resubmitPrivateMCJobs.sh ${dd}' failed with error code $?. The script has aborted."
