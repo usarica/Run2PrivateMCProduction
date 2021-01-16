@@ -228,6 +228,14 @@ echo "Machine specifics: ${MACHINESPECS}"
 declare -i FOUND_EL6=0
 if [[ "${MACHINESPECS}" == *"el6"* ]]; then
   FOUND_EL6=1
+else
+  for evar in $(env); do
+    if [[ "$evar" == *"SINGULARITY_IMAGE_HUMAN"* ]]; then
+      if [[ "$evar" == *"rhel6"* ]] || [[ "$evar" == *"slc6"* ]]; then
+        FOUND_EL6=1
+      fi
+    fi
+  done
 fi
 
 declare -i USE_NATIVE_CALLS=0
