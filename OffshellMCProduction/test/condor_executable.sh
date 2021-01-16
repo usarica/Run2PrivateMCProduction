@@ -254,11 +254,7 @@ if [[ $USE_NATIVE_CALLS -eq 0 ]]; then
 
   # Singularity cache directory might not be set up.
   if [[ -z ${SINGULARITY_CACHEDIR+x} ]]; then
-    if [[ ! -z ${TMPDIR+x} ]]; then
-      export SINGULARITY_CACHEDIR="${TMPDIR}/singularity"
-    else
-      export SINGULARITY_CACHEDIR="/tmp/$(whoami)/singularity"
-    fi
+    export SINGULARITY_CACHEDIR="${CURRENTDIR}/singularity"
   fi
 
   # Some singularity implementations have older versions, which do not have the no-home option.
@@ -266,6 +262,17 @@ if [[ $USE_NATIVE_CALLS -eq 0 ]]; then
   if [[ ! -z "${STRRUNNOHOME}" ]]; then
     SINGULARITYARGS="${SINGULARITYARGS} --no-home"
   fi
+  #if [[ ! -z ${GLIDEIN_PROVIDES+x} ]]; then
+  #  if [[ "${GLIDEIN_PROVIDES}" == *"singularity/unprivileged"* ]]; then
+  #    STRRUNFAKEROOT="$(singularity help exec | grep -e fakeroot)"
+  #    if [[ ! -z "${STRRUNFAKEROOT}" ]]; then
+  #      SINGULARITYARGS="--fakeroot ${SINGULARITYARGS}"
+  #    else
+  #      echo "Unable to find the --fakeroot option while it is needed."
+  #      exit 1
+  #    fi
+  #  fi
+  #fi
 
   # Try to execute a very simple command to see if singularity runs correctly
   testcmd="singularity exec ${SINGULARITYARGS} ${SINGULARITYCONTAINER} ls -la"

@@ -94,14 +94,13 @@ class BatchManager:
 
       gridproxy = getVOMSProxy()
       hostname = socket.gethostname()
-      strrequirements = 'Requirements = (HAS_SINGULARITY=?=True && HAS_CVMFS_cms_cern_ch =?= true)'
-      strsingularity = ""
+      strrequirements = 'Requirements            = (HAS_SINGULARITY=?=True && HAS_CVMFS_cms_cern_ch =?= True)'
+      strsingularity = '+SingularityImage = "/cvmfs/singularity.opensciencegrid.org/cmssw/{SINGULARITYVERSION}"'.format(SINGULARITYVERSION = singularityver)
       strproject = ""
-      if "t2.ucsd.edu" in hostname:
-         strsingularity = '+SingularityImage = "/cvmfs/singularity.opensciencegrid.org/cmssw/{SINGULARITYVERSION}"'.format(SINGULARITYVERSION = singularityver)
+      if "t2.ucsd.edu" in hostname or "uscms.org" in hostname:
          strproject = '+project_Name = "cmssurfandturf"'
       else:
-         strrequirements = 'Requirements            = (HAS_SINGULARITY=?=True && HAS_CVMFS_cms_cern_ch =?= true) || (!isUndefined(NODE_MOUNTS_CVMFS) && NODE_MOUNTS_CVMFS)'
+         strrequirements = 'Requirements            = (HAS_SINGULARITY=?=True && HAS_CVMFS_cms_cern_ch =?= True) || (!isUndefined(NODE_MOUNTS_CVMFS) && NODE_MOUNTS_CVMFS)'
          #strrequirements = 'Requirements            = (OpSysAndVer =?= "SLCern6" || OpSysAndVer =?= "SL6" || OpSysAndVer =?= "SLFermi6") || (HAS_SINGULARITY =?= true || GLIDEIN_REQUIRED_OS =?= "rhel6") || (OSGVO_OS_STRING =?= "RHEL 6" && HAS_CVMFS_cms_cern_ch =?= true)'
 
       scriptargs = {
