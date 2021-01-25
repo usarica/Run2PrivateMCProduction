@@ -99,6 +99,8 @@ class BatchManager:
       strproject = ""
       if "t2.ucsd.edu" in hostname or "uscms.org" in hostname:
          strproject = '+project_Name = "cmssurfandturf"'
+         if "uscms.org" in hostname:
+            strrequirements = 'Requirements            = (HAS_SINGULARITY=?=True) || (NODE_MOUNTS_CVMFS =?= true)'
       else:
          strrequirements = 'Requirements            = (HAS_SINGULARITY=?=True && HAS_CVMFS_cms_cern_ch =?= True) || (!isUndefined(NODE_MOUNTS_CVMFS) && NODE_MOUNTS_CVMFS)'
          #strrequirements = 'Requirements            = (OpSysAndVer =?= "SLCern6" || OpSysAndVer =?= "SL6" || OpSysAndVer =?= "SLFermi6") || (HAS_SINGULARITY =?= true || GLIDEIN_REQUIRED_OS =?= "rhel6") || (OSGVO_OS_STRING =?= "RHEL 6" && HAS_CVMFS_cms_cern_ch =?= true)'
@@ -150,6 +152,7 @@ notification            = Never
 should_transfer_files   = YES
 when_to_transfer_output = ON_EXIT_OR_EVICT
 +WantRemoteIO           = false
++RequiresCVMFS          = true
 {REQUIREMENTS}
 {SINGULARITY}
 {PROJECTNAME}

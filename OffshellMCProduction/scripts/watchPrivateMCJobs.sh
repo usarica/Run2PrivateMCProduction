@@ -1,5 +1,22 @@
 #!/bin/bash
 
+launch_email(){
+  theRecipient="$1"
+  theSubject="$2"
+  theBody="$3"
+
+  command -v mail &> /dev/null
+  if [[ $? -eq 0 ]]; then
+    mail -s "${theSubject}" ${theRecipient} <<< "${theBody}"
+  else
+    rm -f tmpmail.txt
+    echo "Subject: ${theSubject}" >> tmpmail.txt
+    echo "${theBody}" >> tmpmail.txt
+    sendmail ${theRecipient} < tmpmail.txt
+    rm -f tmpmail.txt
+  fi
+}
+
 if [[ $# -ne 2 ]]; then
   echo "You must specify the check directory as the first argument, and your email as the second."
   exit 1
@@ -27,7 +44,7 @@ let proxy_valid_threshold=86400 # 1 day
 
 
 echo "CondorWatch is launched for ${chkdir} by $(whoami):${thehost}."
-mail -s "[CondorWatch] ($(whoami):${thehost}) BEGIN" $mymail <<< "A watch on ${curdir}/${chkdir} is launched."
+launch_email ${mymail} "[CondorWatch] ($(whoami):${thehost}) BEGIN" "A watch on ${curdir}/${chkdir} is launched."
 
 
 time_offset=$(date +%s)
@@ -50,13 +67,13 @@ declare -i proxytime=0
 while [[ 1 ]]; do
   proxytime=$(voms-proxy-info --timeleft --file=${proxy_file})
   if [[ ${proxytime} -lt ${proxy_valid_threshold} ]]; then
-    mail -s "[CondorWatch] ($(whoami):${thehost}) WARNING" $mymail <<< "Your VOMS proxy file ${proxy_file} will expire in less than 1 day. Please run ./setup.sh under $(pwd) urgently. Otherwise, this script will nag you every hour."
+    launch_email ${mymail} "[CondorWatch] ($(whoami):${thehost}) WARNING" "Your VOMS proxy file ${proxy_file} will expire in less than 1 day. Please run ./setup.sh under $(pwd) urgently. Otherwise, this script will nag you every hour."
   fi
 
   rm -f ${watchlog}
   checkPrivateMCJobs.sh ${chkdir} &> ${watchlog}
   if [[ $? -ne 0 ]]; then
-    mail -s "[CondorWatch] ($(whoami):${thehost}) ERROR" $mymail <<< "Command 'checkPrivateMCJobs.sh ${chkdir} &> ${watchlog}' failed with error code $?. The script has aborted. Please check the file ${watchlog} for hints."
+    launch_email ${mymail} "[CondorWatch] ($(whoami):${thehost}) ERROR" "Command 'checkPrivateMCJobs.sh ${chkdir} &> ${watchlog}' failed with error code $?. The script has aborted. Please check the file ${watchlog} for hints."
     exit 1
   fi
   nTOTAL=$(grep -e "Total jobs checked" ${watchlog} | awk '{print $4}')
@@ -84,19 +101,19 @@ while [[ 1 ]]; do
         done
       done
       chmod -R 777 ${webdir}
-      mail -s "[CondorWatch] ($(whoami):${thehost}) INFO" $mymail <<< "The logs of failed jobs are placed in ${webdir} for your daily scrutiny."
+      launch_email ${mymail} "[CondorWatch] ($(whoami):${thehost}) INFO" "The logs of failed jobs are placed in ${webdir} for your daily scrutiny."
     fi
   fi
 
   for dd in "${failed_dirs[@]}"; do
     resubmitPrivateMCJobs.sh ${dd}
     if [[ $? -ne 0 ]]; then
-      mail -s "[CondorWatch] ($(whoami):${thehost}) ERROR" $mymail <<< "Command 'resubmitPrivateMCJobs.sh ${dd}' failed with error code $?. The script has aborted."
+      launch_email ${mymail} "[CondorWatch] ($(whoami):${thehost}) ERROR" "Command 'resubmitPrivateMCJobs.sh ${dd}' failed with error code $?. The script has aborted."
       exit 1
     fi
   done
   sleep 3600
 done
 
-mail -s "[CondorWatch] ($(whoami):${thehost}) FINAL REPORT" $mymail <<< "All jobs under $(readlink -f $chkdir) have completed successfully. Please do not forget to exit your screen if you opened one for this watch."
+launch_email ${mymail} "[CondorWatch] ($(whoami):${thehost}) FINAL REPORT" "All jobs under $(readlink -f $chkdir) have completed successfully. Please do not forget to exit your screen if you opened one for this watch."
 rm -f ${watchlog}
