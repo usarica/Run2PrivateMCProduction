@@ -71,7 +71,7 @@ while [[ 1 ]]; do
   fi
 
   rm -f ${watchlog}
-  checkPrivateMCJobs.sh ${chkdir} &> ${watchlog}
+  checkPrivateMCJobs.sh ${chkdir} singleprod &> ${watchlog}
   if [[ $? -ne 0 ]]; then
     launch_email ${mymail} "[CondorWatch] ($(whoami):${thehost}) ERROR" "Command 'checkPrivateMCJobs.sh ${chkdir} &> ${watchlog}' failed with error code $?. The script has aborted. Please check the file ${watchlog} for hints."
     exit 1
