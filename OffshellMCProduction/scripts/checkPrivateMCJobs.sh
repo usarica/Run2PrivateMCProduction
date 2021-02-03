@@ -30,6 +30,9 @@ scheddcmd=""
 if [[ -e FIXED_SCHEDD ]]; then
   scheddcmd="-name $(cat FIXED_SCHEDD)"
 fi
+
+declare -a runningjobs=( $(condor_q ${scheddcmd} -constraint 'JobStatus!=3' -af:j '') )
+
 for f in $(find $chkdir -name condor.sub); do
   d=${f//\/condor.sub}
   if [[ ! -d $d ]];then
@@ -39,16 +42,33 @@ for f in $(find $chkdir -name condor.sub); do
   let countOK=0
   let dirok=1
   let nsubjobs=0
+  let nRunningJobs=0
   for joblog in $(ls $d | grep -e ".log"); do
     jobnumber=${joblog//".log"}
     logfilename="log_job.${jobnumber}.txt"
+
+    let nsubjobs=$nsubjobs+1
 
     resb=( )
     rese=( )
     resf=( )
     ress=( )
 
-    runningjob=$(condor_q ${scheddcmd} -constraint "ClusterId==$jobnumber" -af:j '')
+    let job_is_running=0
+    for jobid in "${runningjobs[@]}"; do
+      if [[ "${jobid}" == "${jobnumber}" ]]; then
+        let job_is_running=1
+        break
+      fi
+    done
+
+    if [[ ${job_is_running} -eq 1 ]]; then
+      echo "Job $jobnumber for $d is still running"
+      let nUNKNOWN=$nUNKNOWN+1
+      let dirok=0
+      let nRunningJobs=${nRunningJobs}+1
+      continue
+    fi
     
     fread="$d/Logs/$logfilename"
 
@@ -62,8 +82,6 @@ for f in $(find $chkdir -name condor.sub); do
         #echo "File $fread with size $freadsize is not long..."
       fi
     fi
-
-    let nsubjobs=$nsubjobs+1
 
     if [[ -e ${fread} ]]; then
       if [[ $islongfile -eq 1 ]]; then
@@ -98,16 +116,12 @@ for f in $(find $chkdir -name condor.sub); do
     let size_resf=${#resf[@]}
     let size_ress=${#ress[@]}
 
-    if [[ ${#runningjob[@]} -gt 0 ]] && [[ ${runningjob[0]} != "" ]]; then
-      echo "$d is still running"
-      let nUNKNOWN=$nUNKNOWN+1
-      let dirok=0
-    elif [[ $size_resb -gt 0 ]] && [[ $size_resb -eq $size_rese ]] && [[ $size_resb -eq $size_ress ]] && [[ $size_resb -eq $size_resf ]];then
-      echo "$d ran successfully."
+    if [[ $size_resb -gt 0 ]] && [[ $size_resb -eq $size_rese ]] && [[ $size_resb -eq $size_ress ]] && [[ $size_resb -eq $size_resf ]];then
+      echo "Job $jobnumber for $d ran successfully."
       let nOK=$nOK+1
       let countOK=$countOK+1
     else
-      echo "$d failed. (Nbegin, Ncopyrun, Nsuccess, Nend) = ( $size_resb, $size_resf, $size_ress, $size_rese )"
+      echo "Job $jobnumber for $d did not run successfully. (Nbegin, Ncopyrun, Nsuccess, Nend) = ( $size_resb, $size_resf, $size_ress, $size_rese )"
       let nFAIL=$nFAIL+1
       let dirok=0
     fi
@@ -116,7 +130,7 @@ for f in $(find $chkdir -name condor.sub); do
 
   if [[ $countOK -gt 0 ]] && [[ $dirok -eq 0 ]];then
     if [[ $multiprod -eq 1 ]];then
-      echo "$d has multiple submissions with $countOK / $nsubjobs success rate, but the folder will be treated as if it failed."
+      echo "$d has multiple submissions with $countOK / $nsubjobs success rate, but all subjobs were required to succeed."
     else
       echo "$d has multiple submissions with $countOK / $nsubjobs success rate, but the user specified the folders to be treated as single jobs."
       let dirok=1
@@ -124,19 +138,28 @@ for f in $(find $chkdir -name condor.sub); do
   fi
 
   if [[ $nsubjobs -eq 0 ]];then
-    echo "$d does not have any subjobs run yet. Marking as failed."
+    echo "$d does not have any subjobs run yet."
     let nFAIL=$nFAIL+1
     let dirok=0
   fi
 
   if [[ $dirok -eq 1 ]];then
     TARFILE="${d}.tar"
+    TARFILEFirst=${TARFILE%/*}
+    TARFILELast=${TARFILE##*/}
+    if [[ ${#TARFILELast} -gt 255 ]]; then
+      TARFILE=${TARFILEFirst}/${TARFILELast//_}
+    fi
     rm -f $TARFILE
     tar Jcf ${TARFILE} $d --exclude={*.tar}
     if [[ $? -eq 0 ]];then
       echo "- Compressed successfully, so removing the directory"
       rm -rf $d
     fi
+  elif [[ $nRunningJobs -gt 0 ]]; then
+    echo "$d is still running."
+  else
+    echo "$d failed."
   fi
 
 done
