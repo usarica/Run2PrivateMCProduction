@@ -7,6 +7,8 @@ NCPUS=$3
 scrdir="$(dirname $0)"
 cd ${scrdir}
 
+chmod 755 runcmsgrid.sh
+
 declare -i RUN_STATUS=1
 declare -i LHE_SEED=${SEED}
 declare -i LHE_ITER=0
@@ -32,6 +34,7 @@ while [[ ${RUN_STATUS} -ne 0 ]]; do
     fi
   fi
 
+  echo "- RUN_STATUS: ${RUN_STATUS}"
   echo "- Iteration is done."
   echo "time: $(date +%s)"
 

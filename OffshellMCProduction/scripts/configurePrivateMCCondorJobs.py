@@ -88,9 +88,9 @@ class BatchManager:
       currendir_noCMSSWsrc = currentdir.replace(currentCMSSWBASESRC,'')
 
       scramver = os.getenv("SCRAM_ARCH")
-      singularityver = "cms:rhel6-m202006"
+      singularityver = "cms:rhel6"
       if "slc7" in scramver and not self.opt.forceSL6:
-         singularityver = "cms:rhel7-m202006"
+         singularityver = "cms:rhel7"
 
       gridproxy = getVOMSProxy()
       hostname = socket.gethostname()
