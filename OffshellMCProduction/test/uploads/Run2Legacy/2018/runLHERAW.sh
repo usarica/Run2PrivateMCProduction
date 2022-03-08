@@ -7,8 +7,6 @@ NCPUS=$3
 scrdir="$(dirname $0)"
 cd ${scrdir}
 
-chmod 755 runcmsgrid.sh
-
 declare -i RUN_STATUS=1
 declare -i LHE_SEED=${SEED}
 declare -i LHE_ITER=0

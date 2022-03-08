@@ -53,7 +53,7 @@ Otherwise you will have to search over the bigbird machines to find where your j
 
 ```
 python submit_jobs.py --tag cern_test_$(whoami) --gridpack_dir=/afs/cern.ch/work/u/usarica/public/Offshell_2l2nu (/home/users/usarica/work/GenStudies/Offshell2020_Gridpacks on UCSD) \
-  --condor_site=t2.ucsd.edu (or iihe.ac.be) --condor_outdir=/hadoop/cms/store/user/$(whoami)/Offshell_2L2Nu/PrivateMC (or /pnfs/iihe/cms/store/user/$(whoami)/Offshell_2L2Nu/PrivateMC) \
+  --condor_site=t2.ucsd.edu (or iihe.ac.be) --condor_outdir=/ceph/cms/store/user/$(whoami)/Offshell_2L2Nu/PrivateMC (or /pnfs/iihe/cms/store/user/$(whoami)/Offshell_2L2Nu/PrivateMC) \
   --testrun test.csv --watch_email="[YOUR EMAIL]"
 ```
 
@@ -73,7 +73,7 @@ The watch command will keep your terminal busy until the jobs are complete. If y
 
 ```
 python submit_jobs.py --tag 201226 --gridpack_dir=/afs/cern.ch/work/u/usarica/public/Offshell_2l2nu (/home/users/usarica/work/GenStudies/Offshell2020_Gridpacks on UCSD) \
-  --condor_site=t2.ucsd.edu (or iihe.ac.be) --condor_outdir=/hadoop/cms/store/user/$(whoami)/Offshell_2L2Nu/PrivateMC (or /pnfs/iihe/cms/store/user/$(whoami)/Offshell_2L2Nu/PrivateMC) \
+  --condor_site=t2.ucsd.edu (or iihe.ac.be) --condor_outdir=/ceph/cms/store/user/$(whoami)/Offshell_2L2Nu/PrivateMC (or /pnfs/iihe/cms/store/user/$(whoami)/Offshell_2L2Nu/PrivateMC) \
   submission_ZZ2L2Nu_201222_$(whoami).csv --watch_email="[YOUR EMAIL]"
 ```
 
