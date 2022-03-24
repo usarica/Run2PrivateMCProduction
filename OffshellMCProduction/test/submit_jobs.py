@@ -125,9 +125,17 @@ def run(csvs, tag, gridpack_dir, fragment_dir, direct_submit, condor_site, condo
                   strproc="ZH_HToWWToLNuQQ_2LFilter"
                   strprocapp="powheg2-minlo-HZJ_JHUGenV735_pythia8"
             elif channel == "ZPrimeToMuMuSB":
+               strproc="ZPrimeToMuMuSB"
                if process == "NNPDF30LO4F_NoMatching_NoPSWgts":
-                  strproc="ZPrimeToMuMuSB"
                   strprocapp="madgraph_pythia8_NoPSWgts"
+               elif process == "Allanach_Y3_NNPDF31LO5F_NoMatching_NoPSWgts":
+                  strprocapp="Allanach_Y3_5f_madgraph_pythia8_NoPSWgts"
+               elif process == "Allanach_DY3_NNPDF31LO5F_NoMatching_NoPSWgts":
+                  strprocapp="Allanach_DY3_5f_madgraph_pythia8_NoPSWgts"
+               elif process == "Allanach_DYp3_NNPDF31LO5F_NoMatching_NoPSWgts":
+                  strprocapp="Allanach_DYp3_5f_madgraph_pythia8_NoPSWgts"
+               elif process == "Allanach_B3mL2_NNPDF31LO5F_NoMatching_NoPSWgts":
+                  strprocapp="Allanach_B3mL2_5f_madgraph_pythia8_NoPSWgts"
             if not strproc or not strprocapp:
                raise RuntimeError("Process strings are not defined for {} production with {} decay. Please edit this script.".format(process, channel))
 

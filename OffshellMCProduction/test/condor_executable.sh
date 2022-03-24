@@ -108,7 +108,7 @@ if [[ ! -z ${FILENAME} ]];then
   # (AH, MONKEYS!)
   if [[ $COPY_STATUS -ne 0 ]]; then
     if [[ "${OUTPUTSITE}" == *"t2.ucsd.edu"* ]]; then
-      COPY_DEST="davs://redirector.t2.ucsd.edu:1094${OUTPUTDIR}/${RENAMEFILE}"
+      COPY_DEST="davs://redirector.t2.ucsd.edu:1095${OUTPUTDIR}/${RENAMEFILE}"
       COPY_DEST=${COPY_DEST/'/ceph/cms'/''}
     elif [[ "${OUTPUTSITE}" == *"eoscms.cern.ch"* ]]; then
       COPY_DEST="root://eoscms.cern.ch${OUTPUTDIR}/${RENAMEFILE}"
