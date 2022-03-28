@@ -134,7 +134,6 @@ def run(tag, gridpack_dir, direct_submit, condor_site, condor_outdir, doOverwrit
    [ pool.apply_async(run_single, args=(strcmd,)) for strcmd in cmdlist ]
    pool.close()
    pool.join()
-   #for strcmd in cmdlist: run_single(strcmd)
 
    if watch_email is not None:
       print("CondorWatch is going to be set up now. Be advised that the watch will not end until the jobs are complete!")
