@@ -104,7 +104,8 @@ class BatchManager:
       strsingularity = '+SingularityImage = "/cvmfs/singularity.opensciencegrid.org/cmssw/{SINGULARITYVERSION}"'.format(SINGULARITYVERSION = singularityver)
       strproject = ""
       if "t2.ucsd.edu" in hostname or "uscms.org" in hostname:
-         strproject = '+project_Name = "cmssurfandturf"'
+         if "t2.ucsd.edu" in self.opt.condorsite:
+            strproject = '+project_Name = "cmssurfandturf"'
          if "uscms.org" in hostname:
             strrequirements = 'Requirements            = (HAS_SINGULARITY=?=True) || (NODE_MOUNTS_CVMFS =?= true)'
          else:
