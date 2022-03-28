@@ -1,19 +1,20 @@
+#!/bin/env python
+
 import os
 import sys
 import socket
-import csv
 import glob
 import re
 import subprocess
 from pprint import pprint
 import argparse
-from Run2PrivateMCProduction.OffshellMCProduction.getVOMSProxy import getVOMSProxy
 import multiprocessing as mp
+from Run2PrivateMCProduction.OffshellMCProduction.getVOMSProxy import getVOMSProxy
+from Run2PrivateMCProduction.OffshellMCProduction.PrivateMCCondorJobManager import BatchManager
 
 
 def run_single(strcmd):
-   #print("Running '{}'".format(strcmd))
-   os.system(strcmd)
+   BatchManager(strcmd)
 
 
 def run(tag, gridpack_dir, direct_submit, condor_site, condor_outdir, doOverwrite, doTestRun, watch_email):
@@ -117,7 +118,7 @@ def run(tag, gridpack_dir, direct_submit, condor_site, condor_outdir, doOverwrit
             "SITES" : allowed_sites
             }
          runCmd = str(
-            "configurePrivateMCCondorJobs.py --batchqueue={BATCHQUEUE} --batchscript={BATCHSCRIPT}" \
+            "--batchqueue={BATCHQUEUE} --batchscript={BATCHSCRIPT}" \
             " --nevents={NEVTS} --seed={SEED} --upload={GRIDPACK} --upload={RUNSCRIPTS}" \
             " --condorsite={CONDORSITE} --condoroutdir={CONDOROUTDIR}" \
             " --outdir={OUTDIR} --outlog={OUTLOG} --errlog={ERRLOG} --required_memory={REQMEM} --required_ncpus={REQNCPUS} --required_disk={REQDISK} --job_flavor={JOBFLAVOR} --sites={SITES}"
@@ -127,14 +128,13 @@ def run(tag, gridpack_dir, direct_submit, condor_site, condor_outdir, doOverwrit
             runCmd = runCmd + " --dry"
          cmdlist.append(runCmd)
 
-   #nthreads = min(10, mp.cpu_count())
-   #print("Running job preparation over {} threads.".format(nthreads))
-   #pool = mp.Pool(nthreads)
-   #[ pool.apply_async(run_single, args=(strcmd)) for strcmd in cmdlist ]
-   #pool.close()
-   #pool.join()
-   for strcmd in cmdlist: run_single(strcmd)
-
+   nthreads = min(10, mp.cpu_count())
+   print("Running job preparation over {} threads.".format(nthreads))
+   pool = mp.Pool(nthreads)
+   [ pool.apply_async(run_single, args=(strcmd,)) for strcmd in cmdlist ]
+   pool.close()
+   pool.join()
+   #for strcmd in cmdlist: run_single(strcmd)
 
    if watch_email is not None:
       print("CondorWatch is going to be set up now. Be advised that the watch will not end until the jobs are complete!")

@@ -108,8 +108,9 @@ if [[ ! -z ${FILENAME} ]];then
   # (AH, MONKEYS!)
   if [[ $COPY_STATUS -ne 0 ]]; then
     if [[ "${OUTPUTSITE}" == *"t2.ucsd.edu"* ]]; then
-      COPY_DEST="davs://redirector.t2.ucsd.edu:1095${OUTPUTDIR}/${RENAMEFILE}"
-      COPY_DEST=${COPY_DEST/'/ceph/cms'/''}
+      COPY_DEST="davs://redirector.t2.ucsd.edu:${OUTPUTDIR}/${RENAMEFILE}"
+      COPY_DEST=${COPY_DEST/'/hadoop/cms'/'1094'}
+      COPY_DEST=${COPY_DEST/'/ceph/cms'/'1095'}
     elif [[ "${OUTPUTSITE}" == *"eoscms.cern.ch"* ]]; then
       COPY_DEST="root://eoscms.cern.ch${OUTPUTDIR}/${RENAMEFILE}"
       COPY_DEST=${COPY_DEST/'/eos/cms'/''}

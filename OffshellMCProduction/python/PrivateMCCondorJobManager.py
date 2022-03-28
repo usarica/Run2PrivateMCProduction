@@ -1,5 +1,3 @@
-#!/bin/env python
-
 import sys
 import imp
 import copy
@@ -17,7 +15,7 @@ from Run2PrivateMCProduction.OffshellMCProduction.getVOMSProxy import getVOMSPro
 
 
 class BatchManager:
-   def __init__(self):
+   def __init__(self, custom_args=None):
       # define options and arguments ====================================
       self.parser = OptionParser()
 
@@ -44,7 +42,15 @@ class BatchManager:
 
       self.parser.add_option("--dry", dest="dryRun", action="store_true", default=False, help="Do not submit jobs, just set up the files")
 
-      (self.opt,self.args) = self.parser.parse_args()
+      parser_args = None
+      if custom_args is not None:
+         if isinstance(custom_args, list):
+            parser_args = custom_args
+         elif isinstance(custom_args, str):
+            parser_args = custom_args.split()
+         else:
+            raise RuntimeError("Unknown type for custom_args.")
+      (self.opt,self.args) = self.parser.parse_args(parser_args)
       optchecks=[
          "batchqueue",
          "batchscript",
@@ -101,10 +107,10 @@ class BatchManager:
          strproject = '+project_Name = "cmssurfandturf"'
          if "uscms.org" in hostname:
             strrequirements = 'Requirements            = (HAS_SINGULARITY=?=True) || (NODE_MOUNTS_CVMFS =?= true)'
-      else:
-         strrequirements = r'Requirements            = (HAS_SINGULARITY=?=True) && !(( regexp("(mh-epyc7662-1)\..*",TARGET.Machine) || regexp("(mh-epyc7662-5)\..*",TARGET.Machine) || regexp("(mh-epyc7662-6)\..*",TARGET.Machine) || regexp("(mh-epyc7662-9)\..*",TARGET.Machine) || regexp("(mh-epyc7662-10)\..*",TARGET.Machine) || regexp("(sdsc-84)\..*",TARGET.Machine) || regexp("(sdsc-3)\..*",TARGET.Machine) || regexp("(cabinet-0-0-29)\..*",TARGET.Machine) || regexp("(cabinet-0-0-23)\..*",TARGET.Machine) || regexp("(cabinet-0-0-21)\..*",TARGET.Machine) || regexp("(cabinet-11-11-3)\..*",TARGET.Machine) )=?=True)'
-         #strrequirements = 'Requirements            = (HAS_SINGULARITY=?=True && HAS_CVMFS_cms_cern_ch =?= True) || (!isUndefined(NODE_MOUNTS_CVMFS) && NODE_MOUNTS_CVMFS)'
-         #strrequirements = 'Requirements            = (OpSysAndVer =?= "SLCern6" || OpSysAndVer =?= "SL6" || OpSysAndVer =?= "SLFermi6") || (HAS_SINGULARITY =?= true || GLIDEIN_REQUIRED_OS =?= "rhel6") || (OSGVO_OS_STRING =?= "RHEL 6" && HAS_CVMFS_cms_cern_ch =?= true)'
+         else:
+            strrequirements = r'Requirements            = (HAS_SINGULARITY=?=True) && !(( regexp("(mh-epyc7662-1)\..*",TARGET.Machine) || regexp("(mh-epyc7662-5)\..*",TARGET.Machine) || regexp("(mh-epyc7662-6)\..*",TARGET.Machine) || regexp("(mh-epyc7662-9)\..*",TARGET.Machine) || regexp("(mh-epyc7662-10)\..*",TARGET.Machine) || regexp("(sdsc-84)\..*",TARGET.Machine) || regexp("(sdsc-3)\..*",TARGET.Machine) || regexp("(cabinet-0-0-29)\..*",TARGET.Machine) || regexp("(cabinet-0-0-23)\..*",TARGET.Machine) || regexp("(cabinet-0-0-21)\..*",TARGET.Machine) || regexp("(cabinet-11-11-3)\..*",TARGET.Machine) )=?=True)'
+            #strrequirements = 'Requirements            = (HAS_SINGULARITY=?=True && HAS_CVMFS_cms_cern_ch =?= True) || (!isUndefined(NODE_MOUNTS_CVMFS) && NODE_MOUNTS_CVMFS)'
+            #strrequirements = 'Requirements            = (OpSysAndVer =?= "SLCern6" || OpSysAndVer =?= "SL6" || OpSysAndVer =?= "SLFermi6") || (HAS_SINGULARITY =?= true || GLIDEIN_REQUIRED_OS =?= "rhel6") || (OSGVO_OS_STRING =?= "RHEL 6" && HAS_CVMFS_cms_cern_ch =?= true)'
 
       scriptargs = {
          "batchScript" : self.opt.batchscript,
@@ -178,8 +184,3 @@ queue
          print("Job command: '{}'".format(jobcmd))
       else:
          ret = os.system(jobcmd)
-
-
-
-if __name__ == '__main__':
-   batchManager = BatchManager()

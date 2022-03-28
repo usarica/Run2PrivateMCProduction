@@ -8,6 +8,7 @@ import subprocess
 from pprint import pprint
 import argparse
 from Run2PrivateMCProduction.OffshellMCProduction.getVOMSProxy import getVOMSProxy
+from Run2PrivateMCProduction.OffshellMCProduction.PrivateMCCondorJobManager import BatchManager
 
 
 def run(csvs, tag, gridpack_dir, fragment_dir, direct_submit, condor_site, condor_outdir, doOverwrite, doTestRun, watch_email):
@@ -231,7 +232,7 @@ def run(csvs, tag, gridpack_dir, fragment_dir, direct_submit, condor_site, condo
                   "SITES" : allowed_sites
                   }
                runCmd = str(
-                  "configurePrivateMCCondorJobs.py --batchqueue={BATCHQUEUE} --batchscript={BATCHSCRIPT} --forceSL6" \
+                  "--batchqueue={BATCHQUEUE} --batchscript={BATCHSCRIPT} --forceSL6" \
                   " --nevents={NEVTS} --seed={SEED} --upload={GRIDPACK} --upload={PYTHIA_FRAGMENT} --upload={RUNSCRIPTS}" \
                   " --condorsite={CONDORSITE} --condoroutdir={CONDOROUTDIR}" \
                   " --outdir={OUTDIR} --outlog={OUTLOG} --errlog={ERRLOG} --required_memory={REQMEM} --required_ncpus={REQNCPUS} --required_disk={REQDISK} --job_flavor={JOBFLAVOR} --sites={SITES}"
@@ -239,7 +240,7 @@ def run(csvs, tag, gridpack_dir, fragment_dir, direct_submit, condor_site, condo
                #print(runCmd)
                if not direct_submit:
                   runCmd = runCmd + " --dry"
-               os.system(runCmd)
+               BatchManager(runCmd)
 
    if watch_email is not None:
       print("CondorWatch is going to be set up now. Be advised that the watch will not end until the jobs are complete!")
