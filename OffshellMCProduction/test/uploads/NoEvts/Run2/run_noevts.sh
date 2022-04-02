@@ -22,10 +22,10 @@ if [[ ${RUN_STATUS} -eq 0 ]]; then
 fi
 
 if [[ ${RUN_STATUS} -ne 0 ]]; then
-  echo "HNNLO failed with error code ${RUN_STATUS}. Output:"
+  echo "top file generation failed with error code ${RUN_STATUS}. Output:"
   cat log.txt
   echo ${RUN_STATUS} >> ERROR
   exit ${RUN_STATUS}
 else
-  echo "HNNLO SUCCESSFUL"
+  echo "SUCCESSFUL TOP FILE GENERATION"
 fi

@@ -287,10 +287,19 @@ fi
 chmod 755 ${RUNDIR}/*
 
 echo "time: $(date +%s)"
-if [[ $USE_NATIVE_CALLS -eq 1 ]]; then
-  ${RUNDIR}/run_hnnlo.sh ${SEED} ${NCPUS}
-else
-  singularity exec ${SINGULARITYARGS} ${SINGULARITYCONTAINER} ${RUNDIR}/run_hnnlo.sh ${SEED} ${NCPUS} || touch ${RUNDIR}/ERROR
+if [[ -f ${RUNDIR}/run_noevts.sh ]]; then
+  if [[ $USE_NATIVE_CALLS -eq 1 ]]; then
+    ${RUNDIR}/run_noevts.sh ${SEED} ${NCPUS}
+  else
+    singularity exec ${SINGULARITYARGS} ${SINGULARITYCONTAINER} ${RUNDIR}/run_noevts.sh ${SEED} ${NCPUS} || touch ${RUNDIR}/ERROR
+  fi
+fi
+if [[ -f ${RUNDIR}/runLHERAW.sh ]]; then
+  if [[ $USE_NATIVE_CALLS -eq 1 ]]; then
+    ${RUNDIR}/runLHERAW.sh ${NEVTS} ${SEED} ${NCPUS}
+  else
+    singularity exec ${SINGULARITYARGS} ${SINGULARITYCONTAINER} ${RUNDIR}/runLHERAW.sh ${NEVTS} ${SEED} ${NCPUS} || touch ${RUNDIR}/ERROR
+  fi
 fi
 if [[ -e ${RUNDIR}/ERROR ]]; then
   exit 1
@@ -299,16 +308,21 @@ fi
 
 # Move everything we need back to this directory
 mv ${RUNDIR}/*.top ./
+mv ${RUNDIR}/*.lhe ./
 
 echo "All steps are done. Preparing for transfer..."
 echo "time: $(date +%s)"
 
 
-# Rename and tar LHE files and move to LHE folder
-# Making an LHE directory not only puts the tarball inside but also helps create the LHE output subdirectory
-mv results.top ${OUTNAME}.top
-echo ${OUTNAME}.top >> EXTERNAL_TRANSFER_LIST.LST
-
+# Rename files to transfer directly
+if [[ -s results.top ]]; then
+  mv results.top ${OUTNAME}.top
+  echo ${OUTNAME}.top >> EXTERNAL_TRANSFER_LIST.LST
+fi
+if [[ -s cmsgrid_final.lhe ]]; then
+  mv cmsgrid_final.lhe ${OUTNAME}.lhe
+  echo ${OUTNAME}.lhe >> EXTERNAL_TRANSFER_LIST.LST
+fi
 
 echo "Files being transfered:"
 cat EXTERNAL_TRANSFER_LIST.LST

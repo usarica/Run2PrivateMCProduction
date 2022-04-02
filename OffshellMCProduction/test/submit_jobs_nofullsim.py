@@ -16,7 +16,7 @@ def run_single(strcmd):
    os.system(strcmd)
 
 
-def run(tag, gridpack_dir, direct_submit, condor_site, condor_outdir, doOverwrite, doTestRun, watch_email):
+def run(tag, gridpack_dir, runscripts_dir, runscripts_tag, nchunks, nevts_requested, direct_submit, condor_site, condor_outdir, doOverwrite, doTestRun, watch_email):
    if not os.path.exists(gridpack_dir):
       raise RuntimeError("{} doesn't exist!".format(gridpack_dir))
 
@@ -72,17 +72,16 @@ def run(tag, gridpack_dir, direct_submit, condor_site, condor_outdir, doOverwrit
       if not os.path.isdir(outdir_main):
          os.makedirs(outdir_main)
 
-      runscripts = outdir_core + "/runscripts_Run2.tar"
+      runscripts = outdir_core + "/runscripts_{}.tar".format(runscripts_tag)
       if not os.path.exists(runscripts):
-         os.system("createPrivateMCRunScriptsTarball.sh HNNLOv2 {} {}".format("Run2", runscripts))
+         os.system("createPrivateMCRunScriptsTarball.sh {} {} {}".format(runscripts_dir, runscripts_tag, runscripts))
       if not os.path.exists(runscripts):
          raise RuntimeError("Failed to create {}".format(runscripts))
 
       batchscript = outdir_main + "/executable.sh"
       if doOverwrite or not os.path.exists(batchscript):
-         os.system("cp condor_executable_hnnlo.sh {}".format(batchscript))
+         os.system("cp condor_executable_nofullsim.sh {}".format(batchscript))
 
-      nchunks = int(100)
       reqdisk = 1024
       strreqdisk = "{}M".format(reqdisk)
 
@@ -97,7 +96,6 @@ def run(tag, gridpack_dir, direct_submit, condor_site, condor_outdir, doOverwrit
          elif not doOverwrite:
             continue
 
-         nevts_requested = 1
          jobargs = {
             "BATCHQUEUE" : batchqueue,
             "BATCHSCRIPT" : batchscript,
@@ -147,6 +145,10 @@ if __name__ == "__main__":
    parser.add_argument("--gridpack_dir", help="Full path of gridpacks", type=str, required=True)
    parser.add_argument("--condor_site", help="Condor site. You can specify the exact protocol and ports, or give something generic as 't2.ucsd.edu'. Check condor_executable.sh syntax.", type=str, required=True)
    parser.add_argument("--condor_outdir", help="Full path of the target main directory", type=str, required=True)
+   parser.add_argument("--nsubjobs", help="Number of subjobs per gridpack", type=int, required=True)
+   parser.add_argument("--nevts_per_job", help="Number of events per subjob (set to 1 if no events are requested)", type=int, required=True)
+   parser.add_argument("--runscripts_dir", help="Main run scripts directory (e.g. LHEOnly or NoEvts), omitting uploads/", type=str, required=True)
+   parser.add_argument("--runscripts_tag", help="Run scripts tag (hint: path should look like uploads/[dir]/[tag])", type=str, required=True)
    parser.add_argument("--direct_submit", help="Submit without waiting", action='store_true', required=False, default=False)
    parser.add_argument("--overwrite", help="Flag to overwrite job directories even if they are present", action='store_true', required=False, default=False)
    parser.add_argument("--testrun", help="Flag for test run", action='store_true', required=False, default=False)
@@ -163,6 +165,10 @@ if __name__ == "__main__":
    run(
       tag=args.tag,
       gridpack_dir=args.gridpack_dir,
+      runscripts_dir=args.runscripts_dir,
+      runscripts_tag=args.runscripts_tag,
+      nchunks=args.nsubjobs,
+      nevts_requested=args.nevts_per_job,
       direct_submit=args.direct_submit,
       condor_site=args.condor_site, condor_outdir=args.condor_outdir,
       doOverwrite=args.overwrite,
