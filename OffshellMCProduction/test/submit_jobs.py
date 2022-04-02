@@ -8,9 +8,10 @@ import subprocess
 from pprint import pprint
 import argparse
 from Run2PrivateMCProduction.OffshellMCProduction.getVOMSProxy import getVOMSProxy
+from Run2PrivateMCProduction.OffshellMCProduction.PrivateMCCondorJobManager import BatchManager
 
 
-def run(csvs, tag, gridpack_dir, fragment_dir, direct_submit, condor_site, condor_outdir, doOverwrite, doTestRun, watch_email):
+def run(csvs, tag, gridpack_dir, fragment_dir, direct_submit, condor_site, condor_outdir, doOverwrite, doTestRun, nthreads, watch_email):
    if not os.path.exists(gridpack_dir):
       raise RuntimeError("{} doesn't exist!".format(gridpack_dir))
    if not os.path.exists(fragment_dir):
@@ -43,6 +44,7 @@ def run(csvs, tag, gridpack_dir, fragment_dir, direct_submit, condor_site, condo
          if "runscripts" in tmpf and ".tar" in tmpf:
             os.unlink(outdir_core + '/' + tmpf)
 
+   cmdlist = []
    for fname in csvs:
       with open(fname) as fh:
          reader = csv.DictReader(fh)
@@ -231,7 +233,7 @@ def run(csvs, tag, gridpack_dir, fragment_dir, direct_submit, condor_site, condo
                   "SITES" : allowed_sites
                   }
                runCmd = str(
-                  "configurePrivateMCCondorJobs.py --batchqueue={BATCHQUEUE} --batchscript={BATCHSCRIPT} --forceSL6" \
+                  "--batchqueue={BATCHQUEUE} --batchscript={BATCHSCRIPT} --forceSL6" \
                   " --nevents={NEVTS} --seed={SEED} --upload={GRIDPACK} --upload={PYTHIA_FRAGMENT} --upload={RUNSCRIPTS}" \
                   " --condorsite={CONDORSITE} --condoroutdir={CONDOROUTDIR}" \
                   " --outdir={OUTDIR} --outlog={OUTLOG} --errlog={ERRLOG} --required_memory={REQMEM} --required_ncpus={REQNCPUS} --required_disk={REQDISK} --job_flavor={JOBFLAVOR} --sites={SITES}"
@@ -239,7 +241,14 @@ def run(csvs, tag, gridpack_dir, fragment_dir, direct_submit, condor_site, condo
                #print(runCmd)
                if not direct_submit:
                   runCmd = runCmd + " --dry"
-               os.system(runCmd)
+               cmdlist.append(runCmd)
+
+   nthreads = min(nthreads, mp.cpu_count())
+   print("Running job preparation over {} threads.".format(nthreads))
+   pool = mp.Pool(nthreads)
+   [ pool.apply_async(run_single, args=(strcmd,)) for strcmd in cmdlist ]
+   pool.close()
+   pool.join()
 
    if watch_email is not None:
       print("CondorWatch is going to be set up now. Be advised that the watch will not end until the jobs are complete!")
@@ -257,6 +266,7 @@ if __name__ == "__main__":
    parser.add_argument("--direct_submit", help="Submit without waiting", action='store_true', required=False, default=False)
    parser.add_argument("--overwrite", help="Flag to overwrite job directories even if they are present", action='store_true', required=False, default=False)
    parser.add_argument("--testrun", help="Flag for test run", action='store_true', required=False, default=False)
+   parser.add_argument("--nthreads", help="Number of threads to run for this submission script", type=int, default=1, required=False)
    parser.add_argument("--watch_email", help="Email address to launch watching directly. You may always set it up separately. Automatic watching can be set up through this script if the user specifies an address, but make sure to run this script on a screen.", type=str, required=False, default=None)
    args = parser.parse_args()
 
@@ -277,5 +287,6 @@ if __name__ == "__main__":
       direct_submit=args.direct_submit, condor_site=args.condor_site, condor_outdir=args.condor_outdir,
       doOverwrite=args.overwrite,
       doTestRun=args.testrun,
+      nthreads=args.nthreads,
       watch_email=args.watch_email
       )
