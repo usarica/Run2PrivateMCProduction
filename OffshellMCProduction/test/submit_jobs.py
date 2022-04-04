@@ -1,3 +1,5 @@
+#!/bin/env python
+
 import os
 import sys
 import socket
@@ -7,11 +9,16 @@ import re
 import subprocess
 from pprint import pprint
 import argparse
+import multiprocessing as mp
 from Run2PrivateMCProduction.OffshellMCProduction.getVOMSProxy import getVOMSProxy
 from Run2PrivateMCProduction.OffshellMCProduction.PrivateMCCondorJobManager import BatchManager
 
 
-def run(csvs, tag, gridpack_dir, fragment_dir, direct_submit, condor_site, condor_outdir, doOverwrite, doTestRun, nthreads, watch_email):
+def run_single(strcmd):
+   BatchManager(strcmd)
+
+
+def run(csvs, tag, gridpack_dir, fragment_dir, runscripts_tag, direct_submit, condor_site, condor_outdir, doOverwrite, doTestRun, nthreads, watch_email):
    if not os.path.exists(gridpack_dir):
       raise RuntimeError("{} doesn't exist!".format(gridpack_dir))
    if not os.path.exists(fragment_dir):
@@ -68,12 +75,22 @@ def run(csvs, tag, gridpack_dir, fragment_dir, direct_submit, condor_site, condo
                raise RuntimeError("{} doesn't exist!".format(pythia_fragment))
 
             yeartag=""
-            if year == "2016":
-               yeartag="RunIISummer16MiniAODv3-PUMoriond17_94X_mcRun2_asymptotic_v3-v2"
-            elif year == "2017":
-               yeartag="RunIIFall17MiniAODv2-PU2017_12Apr2018_94X_mc2017_realistic_v14-v2"
-            elif year == "2018":
-               yeartag="RunIIAutumn18MiniAOD-102X_upgrade2018_realistic_v15-v2"
+            if runscripts_tag == "Run2Legacy":
+               if year == "2016":
+                  yeartag="RunIISummer16MiniAODv3-PUMoriond17_94X_mcRun2_asymptotic_v3-v2"
+               elif year == "2017":
+                  yeartag="RunIIFall17MiniAODv2-PU2017_12Apr2018_94X_mc2017_realistic_v14-v2"
+               elif year == "2018":
+                  yeartag="RunIIAutumn18MiniAOD-102X_upgrade2018_realistic_v15-v2"
+            elif runscripts_tag == "Run2UL":
+               if year == "2016_preVFP":
+                  yeartag="RunIISummer20UL16MiniAODAPVv2-106X_mcRun2_asymptotic_preVFP_v11-v2"
+               elif year == "2016_postVFP":
+                  yeartag="RunIISummer20UL16MiniAODv2-106X_mcRun2_asymptotic_v17-v2"
+               elif year == "2017":
+                  yeartag="RunIISummer20UL17MiniAODv2-106X_mc2017_realistic_v9-v2"
+               elif year == "2018":
+                  yeartag="RunIISummer20UL18MiniAODv2-106X_upgrade2018_realistic_v16_L1v1-v2"
             if not yeartag:
                raise RuntimeError("Year tag is not defined for year {}. Please edit this script.".format(year))
 
@@ -151,12 +168,15 @@ def run(csvs, tag, gridpack_dir, fragment_dir, direct_submit, condor_site, condo
             elif "scaledn" in pythia_fragment:
                strprocapp = "scaledown_" + strprocapp
 
-            if year == "2016":
-               strprocapp = "TuneCUETP8M1_13TeV_" + strprocapp
-            elif year == "2017" or year == "2018":
+            if runscripts_tag == "Run2Legacy":
+               if year == "2016":
+                  strprocapp = "TuneCUETP8M1_13TeV_" + strprocapp
+               elif year == "2017" or year == "2018":
+                  strprocapp = "TuneCP5_13TeV_" + strprocapp
+               else:
+                  raise RuntimeError("Tune information is not known for year {}.".format(year))
+            elif runscripts_tag == "Run2UL":
                strprocapp = "TuneCP5_13TeV_" + strprocapp
-            else:
-               raise RuntimeError("Tune information is not known for year {}.".format(year))
 
             dataset = "/{}_M{}_{}/{}_private".format(strproc, mass, strprocapp, yeartag)
 
@@ -179,7 +199,7 @@ def run(csvs, tag, gridpack_dir, fragment_dir, direct_submit, condor_site, condo
 
             runscripts = outdir_core + "/runscripts_{}.tar".format(year)
             if not os.path.exists(runscripts):
-               os.system("createPrivateMCRunScriptsTarball.sh Run2Legacy {} {}".format(year, runscripts))
+               os.system("createPrivateMCRunScriptsTarball.sh {} {} {}".format(runscripts_tag, year, runscripts))
             if not os.path.exists(runscripts):
                raise RuntimeError("Failed to create {}".format(runscripts))
             # We also need to upload the Pythia fragment, but it needs to be done via symlinking for renaming purposes
@@ -230,10 +250,11 @@ def run(csvs, tag, gridpack_dir, fragment_dir, direct_submit, condor_site, condo
                   "REQDISK" : strreqdisk,
                   "REQNCPUS" : reqncpus,
                   "JOBFLAVOR" : jobflavor,
-                  "SITES" : allowed_sites
+                  "SITES" : allowed_sites,
+                  "FORCESL6" : ("--forceSL6" if runscripts_tag == "Run2Legacy" else "")
                   }
                runCmd = str(
-                  "--batchqueue={BATCHQUEUE} --batchscript={BATCHSCRIPT} --forceSL6" \
+                  "--batchqueue={BATCHQUEUE} --batchscript={BATCHSCRIPT} {FORCESL6}" \
                   " --nevents={NEVTS} --seed={SEED} --upload={GRIDPACK} --upload={PYTHIA_FRAGMENT} --upload={RUNSCRIPTS}" \
                   " --condorsite={CONDORSITE} --condoroutdir={CONDOROUTDIR}" \
                   " --outdir={OUTDIR} --outlog={OUTLOG} --errlog={ERRLOG} --required_memory={REQMEM} --required_ncpus={REQNCPUS} --required_disk={REQDISK} --job_flavor={JOBFLAVOR} --sites={SITES}"
@@ -264,6 +285,7 @@ if __name__ == "__main__":
    parser.add_argument("--condor_site", help="Condor site. You can specify the exact protocol and ports, or give something generic as 't2.ucsd.edu'. Check condor_executable.sh syntax.", type=str, required=True)
    parser.add_argument("--condor_outdir", help="Full path of the target main directory", type=str, required=True)
    parser.add_argument("--direct_submit", help="Submit without waiting", action='store_true', required=False, default=False)
+   parser.add_argument("--runscripts_tag", help="Run scripts tag (hint: path should look like uploads/[tag])", type=str, required=True)
    parser.add_argument("--overwrite", help="Flag to overwrite job directories even if they are present", action='store_true', required=False, default=False)
    parser.add_argument("--testrun", help="Flag for test run", action='store_true', required=False, default=False)
    parser.add_argument("--nthreads", help="Number of threads to run for this submission script", type=int, default=1, required=False)
@@ -284,6 +306,7 @@ if __name__ == "__main__":
    run(
       csvs=args.csvs, tag=args.tag,
       gridpack_dir=args.gridpack_dir, fragment_dir=args.fragment_dir,
+      runscripts_tag=args.runscripts_tag,
       direct_submit=args.direct_submit, condor_site=args.condor_site, condor_outdir=args.condor_outdir,
       doOverwrite=args.overwrite,
       doTestRun=args.testrun,
