@@ -209,8 +209,9 @@ def run(csvs, tag, gridpack_dir, fragment_dir, runscripts_tag, direct_submit, co
             os.symlink(pythia_fragment, pythia_fragment_dset)
 
             batchscript = outdir_main + "/executable.sh"
+            sourcescript = "condor_executable_sl6.sh" if runscripts_tag == "Run2Legacy" else "condor_executable_sl7.sh"
             if doOverwrite or not os.path.exists(batchscript):
-               os.system("cp condor_executable.sh {}".format(batchscript))
+               os.system("cp {} {}".format(sourcescript, batchscript))
 
             nchunks = int(nevts_total / nevts_per_job)
             nevts_remainder = int(nevts_total - nchunks*nevts_per_job)
