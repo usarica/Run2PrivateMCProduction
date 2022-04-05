@@ -372,6 +372,12 @@ mv miniaod.root MINIAODSIM/output_${SEED}.root
 chmod -R 775 MINIAODSIM
 echo MINIAODSIM/output_${SEED}.root >> EXTERNAL_TRANSFER_LIST.LST
 
+# Make the XSEC directory and move the file there
+mkdir XSEC
+mv xsec.txt XSEC/output_${SEED}.txt
+chmod -R 775 XSEC
+echo XSEC/output_${SEED}.txt >> EXTERNAL_TRANSFER_LIST.LST
+
 # Make the NANOAODSIM directory and move the file there
 mkdir NANOAODSIM
 mv nanoaod.root NANOAODSIM/output_${SEED}.root

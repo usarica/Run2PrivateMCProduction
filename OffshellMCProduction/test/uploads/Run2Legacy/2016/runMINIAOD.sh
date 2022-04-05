@@ -42,3 +42,16 @@ if [[ ${RUN_STATUS} -ne 0 ]]; then
 else
   echo "MINIAOD SUCCESSFUL"
 fi
+
+cmd="cmsRun -n 1 xsec_cfg.py"
+echo "Running ${cmd}"
+${cmd} &> xsec.txt # The log is the output in this case.
+RUN_STATUS=$?
+if [[ ${RUN_STATUS} -ne 0 ]]; then
+  echo "XSEC step failed with error code ${RUN_STATUS}. Output log:"
+  cat xsec.txt
+  echo ${RUN_STATUS} >> ERROR
+  exit ${RUN_STATUS}
+else
+  echo "XSEC SUCCESSFUL"
+fi

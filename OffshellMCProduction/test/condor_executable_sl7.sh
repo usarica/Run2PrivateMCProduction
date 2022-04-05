@@ -242,7 +242,7 @@ fi
 declare -i USE_NATIVE_CALLS=0
 if [[ ${FOUND_EL7} -eq 1 ]] && [[ ${HAS_CMSSW} -eq 0 ]]; then
   USE_NATIVE_CALLS=1
-  echo "Machine has both CMS environment scripts and runs on SL6 OS. Native calls will be used."
+  echo "Machine has both CMS environment scripts and runs on SL7 OS. Native calls will be used."
 else
   echo "Machine does not have the proper setup to run native calls. Singularity with an SL6 docker container will be used."
 fi
@@ -371,6 +371,12 @@ mkdir MINIAODSIM
 mv miniaod.root MINIAODSIM/output_${SEED}.root
 chmod -R 775 MINIAODSIM
 echo MINIAODSIM/output_${SEED}.root >> EXTERNAL_TRANSFER_LIST.LST
+
+# Make the XSEC directory and move the file there
+mkdir XSEC
+mv xsec.txt XSEC/output_${SEED}.txt
+chmod -R 775 XSEC
+echo XSEC/output_${SEED}.txt >> EXTERNAL_TRANSFER_LIST.LST
 
 # Make the NANOAODSIM directory and move the file there
 mkdir NANOAODSIM
