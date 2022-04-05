@@ -350,6 +350,7 @@ fi
 # Move everything we need back to this directory
 mv ${RUNDIR}/*.lhe ./
 mv ${RUNDIR}/*.root ./
+mv ${RUNDIR}/*.txt ./
 
 echo "All steps are done. Preparing for transfer..."
 echo "time: $(date +%s)"
