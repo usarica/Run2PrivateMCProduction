@@ -39,6 +39,8 @@ class BatchManager:
       self.parser.add_option("--sites", type="string", help="Name of the HTCondor run sites")
 
       self.parser.add_option("--forceSL6", action="store_true", default=False, help="Force running on SL6 architecture")
+      self.parser.add_option("--forceSL7", action="store_true", default=False, help="Force running on SL7 architecture")
+      self.parser.add_option("--forceSL8", action="store_true", default=False, help="Force running on SL8 architecture")
 
       self.parser.add_option("--dry", dest="dryRun", action="store_true", default=False, help="Do not submit jobs, just set up the files")
 
@@ -94,9 +96,15 @@ class BatchManager:
       currendir_noCMSSWsrc = currentdir.replace(currentCMSSWBASESRC,'')
 
       scramver = os.getenv("SCRAM_ARCH")
-      singularityver = "cms:rhel6"
-      if "slc7" in scramver and not self.opt.forceSL6:
+      singularityver = None
+      if "slc6" in scramver or self.opt.forceSL6:
+         singularityver = "cms:rhel6"
+      elif "slc7" in scramver or self.opt.forceSL7:
          singularityver = "cms:rhel7"
+      elif "el8" in scramver or self.opt.forceSL8:
+         singularityver = "cms:rhel8"
+      else:
+         raise RuntimeError("{} does not have a corresponding Singularity image.".format(scramver))
 
       gridproxy = getVOMSProxy()
       hostname = socket.gethostname()
