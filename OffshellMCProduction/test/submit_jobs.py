@@ -30,8 +30,6 @@ def run(csvs, tag, gridpack_dir, fragment_dir, runscripts_tag, direct_submit, co
       grid_user = os.environ.get("USER")
    grid_user = grid_user.strip()
 
-   scram_arch = os.getenv("SCRAM_ARCH")
-   cmssw_version = os.getenv("CMSSW_VERSION")
    hostname = socket.gethostname()
    allowed_sites = None
    if "t2.ucsd.edu" in hostname:
@@ -56,17 +54,38 @@ def run(csvs, tag, gridpack_dir, fragment_dir, runscripts_tag, direct_submit, co
       with open(fname) as fh:
          reader = csv.DictReader(fh)
          for row in reader:
-            channel = row["channel"]
+            channel = None
+            process = None
+            has_full_process = False
+            if "full_process" in row:
+               process = row["full_process"]
+               has_full_process = True
+               if "lhegen" not in row:
+                  raise RuntimeError("The column 'lhegen' must be present in the csv file.")
+            else:
+               channel = row["channel"]
+               process = row["short_process"]
+
+            lhegen = None
+            if "lhegen" in row:
+               lhegen = row["lhegen"]
+
             # Skip entires that are commented out
-            if channel.strip().startswith("#"): continue
+            if channel is not None and channel.strip().startswith("#"): continue
+            if process is not None and process.strip().startswith("#"): continue
+
+            mass = None
+            strappmass = ""
+            if "mass" in row:
+               mass = row["mass"]
+               strappmass = "_M{}".format(mass)
 
             year = row["year"]
-            process = row["short_process"]
-            mass = row["mass"]
             nevts_total = int(row["nevts_total"])
             nevts_per_job = int(row["nevts_per_job"])
             gridpack = gridpack_dir + '/' + row["gridpack"]
             pythia_fragment = fragment_dir + '/' + row["pythia_fragment"]
+
             seed = 12345000
 
             if not os.path.exists(gridpack):
@@ -74,15 +93,23 @@ def run(csvs, tag, gridpack_dir, fragment_dir, runscripts_tag, direct_submit, co
             if not os.path.exists(pythia_fragment):
                raise RuntimeError("{} doesn't exist!".format(pythia_fragment))
 
+            strtune_sqrts = None
             yeartag=""
+            strforcesl = None
             if runscripts_tag == "Run2Legacy":
+               strforcesl = "--forceSL6"
                if year == "2016":
+                  strtune_sqrts = "TuneCUETP8M1_13TeV"
                   yeartag="RunIISummer16MiniAODv3-PUMoriond17_94X_mcRun2_asymptotic_v3-v2"
                elif year == "2017":
+                  strtune_sqrts = "TuneCP5_13TeV"
                   yeartag="RunIIFall17MiniAODv2-PU2017_12Apr2018_94X_mc2017_realistic_v14-v2"
                elif year == "2018":
+                  strtune_sqrts = "TuneCP5_13TeV"
                   yeartag="RunIIAutumn18MiniAOD-102X_upgrade2018_realistic_v15-v2"
             elif runscripts_tag == "Run2UL":
+               strforcesl = "--forceSL7"
+               strtune_sqrts = "TuneCP5_13TeV"
                if year == "2016_preVFP":
                   yeartag="RunIISummer20UL16MiniAODAPVv2-106X_mcRun2_asymptotic_preVFP_v11-v2"
                elif year == "2016_postVFP":
@@ -91,73 +118,105 @@ def run(csvs, tag, gridpack_dir, fragment_dir, runscripts_tag, direct_submit, co
                   yeartag="RunIISummer20UL17MiniAODv2-106X_mc2017_realistic_v9-v2"
                elif year == "2018":
                   yeartag="RunIISummer20UL18MiniAODv2-106X_upgrade2018_realistic_v16_L1v1-v2"
+            elif runscripts_tag == "Run3Prompt":
+               strforcesl = "--forceSL8"
+               strtune_sqrts = "TuneCP5_13p6TeV"
+               if year == "2022_preEEFix":
+                  yeartag="Run3Summer22MiniAODv4-130X_mcRun3_2022_realistic_v5-v2"
+            if strtune_sqrts is None:
+               raise RuntimeError("Tune information is not known for tag {} and period {}.".format(runscripts_tag, year))
             if not yeartag:
-               raise RuntimeError("Year tag is not defined for year {}. Please edit this script.".format(year))
+               raise RuntimeError("The period tag is not defined for the period {}.".format(year))
+            if not strforcesl:
+               raise RuntimeError("SL version unspecified for tag {}.".format(runscripts_tag))
 
             strproc=""
             strprocapp=""
-            if channel == "ZZ2L2Nu":
-               if process == "GGH":
-                  strproc="GluGluHToZZTo2L2Nu"
-                  strprocapp="powheg2_JHUGenV735_pythia8"
-               elif process == "GGH_minloHJJ":
-                  strproc="GluGluHToZZTo2L2Nu"
-                  strprocapp="powheg2_minloHJJ_JHUGenV735_pythia8"
-               elif process == "VBFH":
-                  strproc="VBF_HToZZTo2L2Nu"
-                  strprocapp="powheg2_JHUGenV735_pythia8"
-               elif process == "WminusH_2L2Q":
-                  strproc="WminusH_HToZZTo2L2Q"
-                  strprocapp="powheg2-minlo-HWJ_JHUGenV735_pythia8"
-               elif process == "WplusH_2L2Q":
-                  strproc="WplusH_HToZZTo2L2Q"
-                  strprocapp="powheg2-minlo-HWJ_JHUGenV735_pythia8"
-               elif process == "WminusH":
-                  strproc="WminusH_HToZZTo2L2Nu"
-                  strprocapp="powheg2-minlo-HWJ_JHUGenV735_pythia8"
-               elif process == "WplusH":
-                  strproc="WplusH_HToZZTo2L2Nu"
-                  strprocapp="powheg2-minlo-HWJ_JHUGenV735_pythia8"
-               elif "ZH" in process:
-                  strproc=process
-                  strprocapp="powheg2-minlo-HZJ_JHUGenV735_pythia8"
-            elif channel == "WW2L2Nu":
-               if process == "GGH":
-                  strproc="GluGluHToWWTo2L2Nu"
-                  strprocapp="powheg2_JHUGenV735_pythia8"
-               elif process == "GGH_minloHJJ":
-                  strproc="GluGluHToWWTo2L2Nu"
-                  strprocapp="powheg2_minloHJJ_JHUGenV735_pythia8"
-               elif process == "VBFH":
-                  strproc="VBF_HToWWTo2L2Nu"
-                  strprocapp="powheg2_JHUGenV735_pythia8"
-               elif process == "WminusH_2LOSFilter":
-                  strproc="WminusH_HToWWToLNu2X_2LOSFilter"
-                  strprocapp="powheg2-minlo-HWJ_JHUGenV735_pythia8"
-               elif process == "WplusH_2LOSFilter":
-                  strproc="WplusH_HToWWToLNu2X_2LOSFilter"
-                  strprocapp="powheg2-minlo-HWJ_JHUGenV735_pythia8"
-               elif process == "ZH":
-                  strproc="ZH_HToWWTo2L2Nu"
-                  strprocapp="powheg2-minlo-HZJ_JHUGenV735_pythia8"
-               elif process == "ZH_LNuQQ_2LFilter":
-                  strproc="ZH_HToWWToLNuQQ_2LFilter"
-                  strprocapp="powheg2-minlo-HZJ_JHUGenV735_pythia8"
-            elif channel == "ZPrimeToMuMuSB":
-               strproc="ZPrimeToMuMuSB"
-               if process == "NNPDF30LO4F_NoMatching_NoPSWgts":
-                  strprocapp="madgraph_pythia8_NoPSWgts"
-               elif process == "Allanach_Y3_NNPDF31LO5F_NoMatching_NoPSWgts":
-                  strprocapp="Allanach_Y3_5f_madgraph_pythia8_NoPSWgts"
-               elif process == "Allanach_DY3_NNPDF31LO5F_NoMatching_NoPSWgts":
-                  strprocapp="Allanach_DY3_5f_madgraph_pythia8_NoPSWgts"
-               elif process == "Allanach_DYp3_NNPDF31LO5F_NoMatching_NoPSWgts":
-                  strprocapp="Allanach_DYp3_5f_madgraph_pythia8_NoPSWgts"
-               elif process == "Allanach_B3mL2_NNPDF31LO5F_NoMatching_NoPSWgts":
-                  strprocapp="Allanach_B3mL2_5f_madgraph_pythia8_NoPSWgts"
+            if has_full_process:
+               strproc = process
+               strprocapp = lhegen
+            else:
+               if channel == "ZZ2L2Nu":
+                  if process == "GGH":
+                     strproc="GluGluHToZZTo2L2Nu"
+                     strprocapp="powheg2_JHUGenV735_pythia8"
+                  elif process == "GGH_minloHJJ":
+                     strproc="GluGluHToZZTo2L2Nu"
+                     strprocapp="powheg2_minloHJJ_JHUGenV735_pythia8"
+                  elif process == "VBFH":
+                     strproc="VBF_HToZZTo2L2Nu"
+                     strprocapp="powheg2_JHUGenV735_pythia8"
+                  elif process == "WminusH_2L2Q":
+                     strproc="WminusH_HToZZTo2L2Q"
+                     strprocapp="powheg2-minlo-HWJ_JHUGenV735_pythia8"
+                  elif process == "WplusH_2L2Q":
+                     strproc="WplusH_HToZZTo2L2Q"
+                     strprocapp="powheg2-minlo-HWJ_JHUGenV735_pythia8"
+                  elif process == "WminusH":
+                     strproc="WminusH_HToZZTo2L2Nu"
+                     strprocapp="powheg2-minlo-HWJ_JHUGenV735_pythia8"
+                  elif process == "WplusH":
+                     strproc="WplusH_HToZZTo2L2Nu"
+                     strprocapp="powheg2-minlo-HWJ_JHUGenV735_pythia8"
+                  elif "ZH" in process:
+                     strproc=process
+                     strprocapp="powheg2-minlo-HZJ_JHUGenV735_pythia8"
+               elif channel == "WW2L2Nu":
+                  if process == "GGH":
+                     strproc="GluGluHToWWTo2L2Nu"
+                     strprocapp="powheg2_JHUGenV735_pythia8"
+                  elif process == "GGH_minloHJJ":
+                     strproc="GluGluHToWWTo2L2Nu"
+                     strprocapp="powheg2_minloHJJ_JHUGenV735_pythia8"
+                  elif process == "VBFH":
+                     strproc="VBF_HToWWTo2L2Nu"
+                     strprocapp="powheg2_JHUGenV735_pythia8"
+                  elif process == "WminusH_2LOSFilter":
+                     strproc="WminusH_HToWWToLNu2X_2LOSFilter"
+                     strprocapp="powheg2-minlo-HWJ_JHUGenV735_pythia8"
+                  elif process == "WplusH_2LOSFilter":
+                     strproc="WplusH_HToWWToLNu2X_2LOSFilter"
+                     strprocapp="powheg2-minlo-HWJ_JHUGenV735_pythia8"
+                  elif process == "ZH":
+                     strproc="ZH_HToWWTo2L2Nu"
+                     strprocapp="powheg2-minlo-HZJ_JHUGenV735_pythia8"
+                  elif process == "ZH_LNuQQ_2LFilter":
+                     strproc="ZH_HToWWToLNuQQ_2LFilter"
+                     strprocapp="powheg2-minlo-HZJ_JHUGenV735_pythia8"
+               elif channel == "ZPrimeToMuMuSB":
+                  strproc="ZPrimeToMuMuSB"
+                  if process == "NNPDF30LO4F_NoMatching_NoPSWgts":
+                     strprocapp="madgraph_pythia8_NoPSWgts"
+                  elif process == "Allanach_Y3_NNPDF31LO5F_NoMatching_NoPSWgts":
+                     strprocapp="Allanach_Y3_5f_madgraph_pythia8_NoPSWgts"
+                  elif process == "Allanach_DY3_NNPDF31LO5F_NoMatching_NoPSWgts":
+                     strprocapp="Allanach_DY3_5f_madgraph_pythia8_NoPSWgts"
+                  elif process == "Allanach_DYp3_NNPDF31LO5F_NoMatching_NoPSWgts":
+                     strprocapp="Allanach_DYp3_5f_madgraph_pythia8_NoPSWgts"
+                  elif process == "Allanach_B3mL2_NNPDF31LO5F_NoMatching_NoPSWgts":
+                     strprocapp="Allanach_B3mL2_5f_madgraph_pythia8_NoPSWgts"
+                  elif process == "BFF":
+                     strprocapp="BFF_madgraphMLM_pythia8"
+                  elif process == "BFF_LOBSM":
+                     strprocapp="BFF_LOBSM_madgraphMLM_pythia8"
+               elif channel == "ZPrimeToTauTauSB":
+                  strproc="ZPrimeToTTSB"
+                  if process == "NNPDF30LO4F_NoMatching_NoPSWgts":
+                     strprocapp="madgraph_pythia8_NoPSWgts"
+                  elif process == "Allanach_Y3_NNPDF31LO5F_NoMatching_NoPSWgts":
+                     strprocapp="Allanach_Y3_5f_madgraph_pythia8_NoPSWgts"
+                  elif process == "Allanach_DY3_NNPDF31LO5F_NoMatching_NoPSWgts":
+                     strprocapp="Allanach_DY3_5f_madgraph_pythia8_NoPSWgts"
+                  elif process == "Allanach_DYp3_NNPDF31LO5F_NoMatching_NoPSWgts":
+                     strprocapp="Allanach_DYp3_5f_madgraph_pythia8_NoPSWgts"
+                  elif process == "Allanach_B3mL2_NNPDF31LO5F_NoMatching_NoPSWgts":
+                     strprocapp="Allanach_B3mL2_5f_madgraph_pythia8_NoPSWgts"
+                  elif process == "BFF":
+                     strprocapp="BFF_madgraphMLM_pythia8"
+                  elif process == "BFF_LOBSM":
+                     strprocapp="BFF_LOBSM_madgraphMLM_pythia8"
             if not strproc or not strprocapp:
-               raise RuntimeError("Process strings are not defined for {} production with {} decay. Please edit this script.".format(process, channel))
-
+               raise RuntimeError("Process strings are not defined for {} production with {} decay.".format(process, (channel if channel is not None else "''")))
 
             if "tuneup" in pythia_fragment:
                strprocapp = "tuneup_" + strprocapp
@@ -168,17 +227,8 @@ def run(csvs, tag, gridpack_dir, fragment_dir, runscripts_tag, direct_submit, co
             elif "scaledn" in pythia_fragment:
                strprocapp = "scaledown_" + strprocapp
 
-            if runscripts_tag == "Run2Legacy":
-               if year == "2016":
-                  strprocapp = "TuneCUETP8M1_13TeV_" + strprocapp
-               elif year == "2017" or year == "2018":
-                  strprocapp = "TuneCP5_13TeV_" + strprocapp
-               else:
-                  raise RuntimeError("Tune information is not known for year {}.".format(year))
-            elif runscripts_tag == "Run2UL":
-               strprocapp = "TuneCP5_13TeV_" + strprocapp
-
-            dataset = "/{}_M{}_{}/{}_private".format(strproc, mass, strprocapp, yeartag)
+            strprocapp = "{}_{}".format(strtune_sqrts, strprocapp)
+            dataset = "/{}{}_{}/{}_private".format(strproc, strappmass, strprocapp, yeartag)
 
             batchqueue = "vanilla"
             reqmem = "2048M"
@@ -186,7 +236,7 @@ def run(csvs, tag, gridpack_dir, fragment_dir, runscripts_tag, direct_submit, co
             #jobflavor = "tomorrow"
             jobflavor = "nextweek"
             reqncpus = 2
-            if channel == "ZPrimeToMuMuSB":
+            if channel is not None and (channel == "ZPrimeToMuMuSB" or channel == "ZPrimeToTauTauSB"):
                jobflavor = "testmatch"
             if doTestRun:
                jobflavor = "microcentury"
@@ -209,7 +259,7 @@ def run(csvs, tag, gridpack_dir, fragment_dir, runscripts_tag, direct_submit, co
             os.symlink(pythia_fragment, pythia_fragment_dset)
 
             batchscript = outdir_main + "/executable.sh"
-            sourcescript = "condor_executable_sl6.sh" if runscripts_tag == "Run2Legacy" else "condor_executable_sl7.sh"
+            sourcescript = "condor_executable_{}.sh".format(strforcesl.replace("--force","").lower())
             if doOverwrite or not os.path.exists(batchscript):
                os.system("cp {} {}".format(sourcescript, batchscript))
 
@@ -252,10 +302,10 @@ def run(csvs, tag, gridpack_dir, fragment_dir, runscripts_tag, direct_submit, co
                   "REQNCPUS" : reqncpus,
                   "JOBFLAVOR" : jobflavor,
                   "SITES" : allowed_sites,
-                  "FORCESL6" : ("--forceSL6" if runscripts_tag == "Run2Legacy" else "")
+                  "FORCESL" : strforcesl
                   }
                runCmd = str(
-                  "--batchqueue={BATCHQUEUE} --batchscript={BATCHSCRIPT} {FORCESL6}" \
+                  "--batchqueue={BATCHQUEUE} --batchscript={BATCHSCRIPT} {FORCESL}" \
                   " --nevents={NEVTS} --seed={SEED} --upload={GRIDPACK} --upload={PYTHIA_FRAGMENT} --upload={RUNSCRIPTS}" \
                   " --condorsite={CONDORSITE} --condoroutdir={CONDOROUTDIR}" \
                   " --outdir={OUTDIR} --outlog={OUTLOG} --errlog={ERRLOG} --required_memory={REQMEM} --required_ncpus={REQNCPUS} --required_disk={REQDISK} --job_flavor={JOBFLAVOR} --sites={SITES}"
